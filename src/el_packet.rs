@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use alloc::boxed::Box;
 use num_derive::FromPrimitive;
 
 // TODO: serialize / deserialize
@@ -7,8 +8,8 @@ struct ElPacket {
     ehd1: u8,
     ehd2: u8,
     transaction_id: u16,
-    seoj: [u8; 3],
-    deoj: [u8; 3],
+    seoj: EchonetObject,
+    deoj: EchonetObject,
     esv: ServiceCode,
     opc: u8,
     props: Box<[u8]>,
@@ -35,12 +36,14 @@ enum ServiceCode {
     SetGetRes = 0x7E,
 }
 
-// TODO: builder to make an object easily
+#[derive(Debug, Default)]
+struct EchonetObject([u8; 3]);
+
 #[derive(Debug)]
 struct ElPacketBuilder {
     transaction_id: u16, // builder 作るときに渡しても良いかも
-    seoj: [u8; 3],
-    deoj: [u8; 3],
+    seoj: EchonetObject,
+    deoj: EchonetObject,
     esv: Option<ServiceCode>,
     opc: u8,
     props: Box<[u8]>,
@@ -50,8 +53,8 @@ impl ElPacketBuilder {
     pub fn new() -> Self {
         Self {
             transaction_id: 0,
-            seoj: [0u8; 3],
-            deoj: [0u8; 3],
+            seoj: Default::default(),
+            deoj: Default::default(),
             esv: None,
             opc: 0,
             props: Default::default(),
@@ -63,12 +66,12 @@ impl ElPacketBuilder {
         self
     }
 
-    pub fn seoj(mut self, seoj: [u8; 3]) -> Self {
+    pub fn seoj(mut self, seoj: EchonetObject) -> Self {
         self.seoj = seoj;
         self
     }
 
-    pub fn deoj(mut self, deoj: [u8; 3]) -> Self {
+    pub fn deoj(mut self, deoj: EchonetObject) -> Self {
         self.deoj = deoj;
         self
     }
