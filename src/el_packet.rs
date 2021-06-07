@@ -1,6 +1,11 @@
 #![allow(dead_code)]
 use alloc::boxed::Box;
 use num_derive::FromPrimitive;
+use serde::{
+    Serialize,
+    ser::{self, SerializeStruct},
+};
+use serde_repr::Serialize_repr;
 
 // TODO: serialize / deserialize
 #[derive(Debug)]
@@ -12,10 +17,27 @@ struct ElPacket {
     deoj: EchonetObject,
     esv: ServiceCode,
     opc: u8,
-    props: Box<[u8]>,
+    props: Box<[Property]>,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, FromPrimitive)]
+impl Serialize for ElPacket {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer
+    {
+        let mut state = serializer.serialize_struct("ElPacket", 8)?;
+        state.serialize_field("ehd1", &self.ehd1)?;
+        state.serialize_field("ehd2", &self.ehd2)?;
+        state.serialize_field("transaction_id", &self.transaction_id)?;
+        state.serialize_field("seoj", &self.seoj)?;
+        state.serialize_field("deoj", &self.deoj)?;
+        state.serialize_field("esv", &self.esv)?;
+        state.serialize_field("opc", &self.opc)?;
+        state.end()
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, FromPrimitive, Serialize_repr)]
 #[repr(u8)]
 enum ServiceCode {
     SetISNA = 0x50,
@@ -36,8 +58,15 @@ enum ServiceCode {
     SetGetRes = 0x7E,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 struct EchonetObject([u8; 3]);
+
+#[derive(Debug, Default)]
+struct Property {
+    epc: u8,
+    pdc: u8,
+    edt: Box<[u8]>,
+}
 
 #[derive(Debug)]
 struct ElPacketBuilder {
@@ -46,7 +75,7 @@ struct ElPacketBuilder {
     deoj: EchonetObject,
     esv: Option<ServiceCode>,
     opc: u8,
-    props: Box<[u8]>,
+    props: Box<[Property]>,
 }
 
 impl ElPacketBuilder {
@@ -81,7 +110,7 @@ impl ElPacketBuilder {
         self
     }
 
-    pub fn props(mut self, props: Box<[u8]>) -> Self {
+    pub fn props(mut self, props: Box<[Property]>) -> Self {
         self.props = props;
         self
     }
@@ -102,6 +131,8 @@ impl ElPacketBuilder {
 
 #[cfg(test)]
 mod test {
+    use bincode::Options;
+
     use super::*;
 
     #[test]
@@ -112,5 +143,18 @@ mod test {
             .build();
         println!("{:?}", packet);
         assert!(true);
+    }
+
+    #[test]
+    fn serialize() {
+        let packet = ElPacketBuilder::new()
+            .transaction_id(1)
+            .esv(ServiceCode::Get)
+            .seoj(EchonetObject([0xef, 0xff, 0x01]))
+            .deoj(EchonetObject([0x03, 0x08, 0x01]))
+            .build();
+        let config = bincode::DefaultOptions::new().with_big_endian().with_fixint_encoding();
+        let encoded: Vec<u8> = config.serialize(&packet).unwrap();
+        println!("{:?}, len = {}", encoded, encoded.len());
     }
 }
