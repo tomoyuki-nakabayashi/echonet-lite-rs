@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use alloc::boxed::Box;
 use num_derive::FromPrimitive;
-use serde::Serialize;
+use serde::{ser::SerializeTuple, Serialize, Serializer};
 use serde_repr::Serialize_repr;
 
 // TODO: deserialize
@@ -14,8 +14,8 @@ struct ElPacket {
     deoj: EchonetObject,
     esv: ServiceCode,
     opc: u8,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    props: Option<Box<[Property]>>,
+    #[serde(serialize_with = "untag_option")]
+    props: Option<Properties>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, FromPrimitive, Serialize_repr)]
@@ -42,12 +42,58 @@ enum ServiceCode {
 #[derive(Debug, Default, Serialize)]
 struct EchonetObject([u8; 3]);
 
+#[derive(Debug, Default)]
+struct Properties(Box<[Property]>);
+impl Serialize for Properties {
+    // In bincode serialization, a slice serializes into a lengh followed by a byte array.
+    // Because we just need a byte array, implement custom serialization here.
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_tuple(self.0.len())?;
+        for e in self.0.iter() {
+            seq.serialize_element(e)?;
+        }
+        seq.end()
+    }
+}
+
 #[derive(Debug, Default, Serialize)]
 struct Property {
     epc: u8,
     pdc: u8,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    edt: Option<Box<[u8]>>,
+    #[serde(serialize_with = "untag_option")]
+    edt: Option<Edt>,
+}
+
+#[derive(Debug, Default)]
+struct Edt(Box<[u8]>);
+impl Serialize for Edt {
+    // In bincode serialization, a slice serializes into a lengh followed by a byte array.
+    // Because we just need a byte array, implement custom serialization here.
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_tuple(self.0.len())?;
+        for e in self.0.iter() {
+            seq.serialize_element(e)?;
+        }
+        seq.end()
+    }
+}
+
+// untag Option to avoid bincode serializes Some(T) into [1, ...].
+fn untag_option<S, T>(f: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+    T: Serialize,
+{
+    match f {
+        Some(value) => value.serialize(serializer),
+        None => serializer.serialize_unit(),
+    }
 }
 
 #[derive(Debug)]
@@ -57,7 +103,7 @@ struct ElPacketBuilder {
     deoj: EchonetObject,
     esv: Option<ServiceCode>,
     opc: u8,
-    props: Option<Box<[Property]>>,
+    props: Option<Properties>,
 }
 
 impl ElPacketBuilder {
@@ -92,7 +138,12 @@ impl ElPacketBuilder {
         self
     }
 
-    pub fn props(mut self, props: Box<[Property]>) -> Self {
+    pub fn opc(mut self, opc: u8) -> Self {
+        self.opc = opc;
+        self
+    }
+
+    pub fn props(mut self, props: Properties) -> Self {
         self.props = Some(props);
         self
     }
@@ -113,19 +164,68 @@ impl ElPacketBuilder {
 
 #[cfg(test)]
 mod test {
-    use bincode::Options;
+    use std::ops::Deref;
+
     use super::*;
+    use bincode::Options;
+    use serde::{ser::SerializeTuple, Serialize, Serializer};
 
     #[test]
     fn serialize() {
+        let prop = Property {
+            epc: 0x80,
+            pdc: 0x01,
+            edt: Some(Edt(Box::new([0x02u8]))),
+        };
         let packet = ElPacketBuilder::new()
             .transaction_id(1)
             .esv(ServiceCode::Get)
             .seoj(EchonetObject([0xef, 0xff, 0x01]))
             .deoj(EchonetObject([0x03, 0x08, 0x01]))
+            .opc(1)
+            .props(Properties(Box::new([prop])))
             .build();
-        let config = bincode::DefaultOptions::new().with_big_endian().with_fixint_encoding();
+        let config = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .with_fixint_encoding();
         let encoded: Vec<u8> = config.serialize(&packet).unwrap();
-        assert_eq!(vec![0x10, 0x81, 0, 1, 0xef, 0xff, 0x01, 0x03, 0x08, 0x01, 0x62, 0], encoded);
+        assert_eq!(
+            vec![0x10, 0x81, 0, 1, 0xef, 0xff, 0x01, 0x03, 0x08, 0x01, 0x62, 1, 0x80, 0x01, 0x02],
+            encoded
+        );
+    }
+
+    #[test]
+    fn serialize_box() {
+        #[derive(Serialize)]
+        struct Hoge {
+            #[serde(serialize_with = "unwrap_option")]
+            fuga: Option<Box<[u8]>>,
+        }
+
+        fn unwrap_option<S>(f: &Option<Box<[u8]>>, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match f {
+                Some(value) => {
+                    let mut seq = serializer.serialize_tuple(value.len())?;
+                    for e in value.deref() {
+                        seq.serialize_element(e)?;
+                    }
+                    seq.end()
+                }
+                None => serializer.serialize_unit(),
+            }
+        }
+
+        let hoge = Hoge {
+            fuga: Some(Box::new([1])),
+        };
+        let config = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .with_fixint_encoding();
+        let encoded: Vec<u8> = config.serialize(&hoge).unwrap();
+        assert_eq!(vec![1], encoded);
     }
 }
