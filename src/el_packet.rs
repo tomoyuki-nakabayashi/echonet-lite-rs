@@ -1,8 +1,8 @@
 #![allow(dead_code)]
-use alloc::boxed::Box;
+use alloc::{boxed::Box, vec::Vec};
 use num_derive::FromPrimitive;
 use serde::{ser::SerializeTuple, Serialize, Serializer, Deserialize};
-use serde_repr::Serialize_repr;
+use serde_repr::{Serialize_repr, Deserialize_repr};
 
 // TODO: deserialize
 #[derive(Debug, Serialize)]
@@ -18,7 +18,7 @@ struct ElPacket {
     props: Option<Properties>,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, FromPrimitive, Serialize_repr)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, FromPrimitive, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 enum ServiceCode {
     SetISNA = 0x50,
@@ -39,11 +39,11 @@ enum ServiceCode {
     SetGetRes = 0x7E,
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
 struct EchonetObject([u8; 3]);
 
 #[derive(Debug, Default)]
-struct Properties(Box<[Property]>);
+struct Properties(Vec<Property>);
 impl Serialize for Properties {
     // In bincode serialization, a slice serializes into a lengh followed by a byte array.
     // Because we just need a byte array, implement custom serialization here.
@@ -67,8 +67,8 @@ struct Property {
     edt: Option<Edt>,
 }
 
-#[derive(Debug, Default)]
-struct Edt(Box<[u8]>);
+#[derive(Debug, PartialEq, Default, Deserialize)]
+struct Edt(Vec<u8>);
 impl Serialize for Edt {
     // In bincode serialization, a slice serializes into a lengh followed by a byte array.
     // Because we just need a byte array, implement custom serialization here.
@@ -175,7 +175,7 @@ mod test {
         let prop = Property {
             epc: 0x80,
             pdc: 0x01,
-            edt: Some(Edt(Box::new([0x02u8]))),
+            edt: Some(Edt(vec![0x02u8])),
         };
         let packet = ElPacketBuilder::new()
             .transaction_id(1)
@@ -183,7 +183,7 @@ mod test {
             .seoj(EchonetObject([0xef, 0xff, 0x01]))
             .deoj(EchonetObject([0x03, 0x08, 0x01]))
             .opc(1)
-            .props(Properties(Box::new([prop])))
+            .props(Properties(vec![prop]))
             .build();
         let config = bincode::DefaultOptions::new()
             .with_big_endian()
