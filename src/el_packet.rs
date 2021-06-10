@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use alloc::boxed::Box;
 use num_derive::FromPrimitive;
-use serde::{ser::SerializeTuple, Serialize, Serializer};
+use serde::{ser::SerializeTuple, Serialize, Serializer, Deserialize};
 use serde_repr::Serialize_repr;
 
 // TODO: deserialize
@@ -195,37 +195,30 @@ mod test {
         );
     }
 
-    #[test]
-    fn serialize_box() {
-        #[derive(Serialize)]
-        struct Hoge {
-            #[serde(serialize_with = "unwrap_option")]
-            fuga: Option<Box<[u8]>>,
-        }
+    // #[test]
+    // fn deserialize() {
+    //     let input: Vec<u8> = vec![0x10, 0x81, 0, 1, 0xef, 0xff, 0x01, 0x03, 0x08, 0x01, 0x62, 1, 0x80, 0x01, 0x02];
+    //     let config = bincode::DefaultOptions::new()
+    //         .with_big_endian()
+    //         .with_fixint_encoding();
+    //     let decoded: Option<ElPacket> = bincode::deserialize(&input).unwrap();
 
-        fn unwrap_option<S>(f: &Option<Box<[u8]>>, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match f {
-                Some(value) => {
-                    let mut seq = serializer.serialize_tuple(value.len())?;
-                    for e in value.deref() {
-                        seq.serialize_element(e)?;
-                    }
-                    seq.end()
-                }
-                None => serializer.serialize_unit(),
-            }
-        }
+    //     let prop = Property {
+    //         epc: 0x80,
+    //         pdc: 0x01,
+    //         edt: Some(Edt(Box::new([0x02u8]))),
+    //     };
+    //     let expect: Option<ElPacket> = Some(
+    //         ElPacketBuilder::new()
+    //             .transaction_id(1)
+    //             .esv(ServiceCode::Get)
+    //             .seoj(EchonetObject([0xef, 0xff, 0x01]))
+    //             .deoj(EchonetObject([0x03, 0x08, 0x01]))
+    //             .opc(1)
+    //             .props(Properties(Box::new([prop])))
+    //             .build()
+    //     );
 
-        let hoge = Hoge {
-            fuga: Some(Box::new([1])),
-        };
-        let config = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding();
-        let encoded: Vec<u8> = config.serialize(&hoge).unwrap();
-        assert_eq!(vec![1], encoded);
-    }
+    //     assert_eq!(expect, decoded);
+    // }
 }
