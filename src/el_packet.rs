@@ -1,7 +1,9 @@
 #![allow(dead_code)]
-use alloc::{boxed::Box, vec::Vec};
+use core::fmt::{self, Formatter};
+
+use alloc::vec::Vec;
 use num_derive::FromPrimitive;
-use serde::{ser::SerializeTuple, Serialize, Serializer, Deserialize};
+use serde::{ser::SerializeTuple, Serialize, Serializer, Deserialize, de::Visitor};
 use serde_repr::{Serialize_repr, Deserialize_repr};
 
 // TODO: deserialize
@@ -67,7 +69,7 @@ struct Property {
     edt: Option<Edt>,
 }
 
-#[derive(Debug, PartialEq, Default, Deserialize)]
+#[derive(Debug, PartialEq, Default)]
 struct Edt(Vec<u8>);
 impl Serialize for Edt {
     // In bincode serialization, a slice serializes into a lengh followed by a byte array.
@@ -81,6 +83,23 @@ impl Serialize for Edt {
             seq.serialize_element(e)?;
         }
         seq.end()
+    }
+}
+
+impl<'de> Visitor<'de> for Edt {
+    type Value = Edt;
+
+    fn expecting(&self, formatter: &mut Formatter) -> Result<(), fmt::Error> {
+        formatter.write_str("never failed")
+    }
+}
+
+impl Deserialize for Edt {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>
+    {
+        
     }
 }
 
@@ -221,4 +240,40 @@ mod test {
 
     //     assert_eq!(expect, decoded);
     // }
+
+    #[test]
+    fn deserialize_tid() {
+        let input = [0u8, 1u8];
+        let config = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .with_fixint_encoding();
+        let decoded: u16 = config.deserialize(&input).unwrap();
+
+        assert_eq!(1, decoded);
+    }
+
+    #[test]
+    fn deserialize_esv() {
+        let input = [0x62u8];
+        let decoded: ServiceCode = bincode::deserialize(&input).unwrap();
+
+        assert_eq!(ServiceCode::Get, decoded);
+    }
+
+    #[test]
+    fn deserialize_eoj() {
+        let input = [0xefu8, 0xffu8, 0x01u8];
+        let decoded: EchonetObject = bincode::deserialize(&input).unwrap();
+
+        assert_eq!(EchonetObject([0xefu8, 0xffu8, 0x01u8]), decoded);
+    }
+
+    #[test]
+    fn deserialize_edt() {
+        let input: [u8; 9] = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01];
+        let decoded: Edt = bincode::deserialize(&input[..]).unwrap();
+
+        // let expect: Box<[u8]> = Box::new([0x30u8]);
+        // assert_eq!(expect, decoded);
+    }
 }
