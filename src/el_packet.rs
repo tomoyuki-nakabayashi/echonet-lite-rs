@@ -1,13 +1,11 @@
 #![allow(dead_code)]
-use core::fmt::{self, Formatter};
-
 use alloc::vec::Vec;
 use num_derive::FromPrimitive;
-use serde::{Deserialize, Deserializer, Serialize, Serializer, de::Visitor, ser::SerializeTuple};
+use serde::{Deserialize, Serialize, Serializer, ser::SerializeTuple};
 use serde_repr::{Serialize_repr, Deserialize_repr};
 
 // TODO: deserialize
-#[derive(Debug, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 struct ElPacket {
     ehd1: u8,
     ehd2: u8,
@@ -15,9 +13,7 @@ struct ElPacket {
     seoj: EchonetObject,
     deoj: EchonetObject,
     esv: ServiceCode,
-    opc: u8,
-    #[serde(serialize_with = "untag_option")]
-    props: Option<Properties>,
+    props: Properties,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, FromPrimitive, Serialize_repr, Deserialize_repr)]
@@ -44,7 +40,7 @@ enum ServiceCode {
 #[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
 struct EchonetObject([u8; 3]);
 
-#[derive(Debug, Default)]
+#[derive(Debug, PartialEq, Default, Deserialize)]
 struct Properties(Vec<Property>);
 impl Serialize for Properties {
     // In bincode serialization, a slice serializes into a lengh followed by a byte array.
@@ -61,15 +57,13 @@ impl Serialize for Properties {
     }
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
 struct Property {
     epc: u8,
-    pdc: u8,
-    #[serde(serialize_with = "untag_option")]
-    edt: Option<Edt>,
+    edt: Edt,
 }
 
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, PartialEq, Default, Deserialize)]
 struct Edt(Vec<u8>);
 impl Serialize for Edt {
     // In bincode serialization, a slice serializes into a lengh followed by a byte array.
@@ -83,32 +77,6 @@ impl Serialize for Edt {
             seq.serialize_element(e)?;
         }
         seq.end()
-    }
-}
-
-struct EdtVisitor;
-impl<'de> Visitor<'de> for EdtVisitor {
-    type Value = Edt;
-
-    fn expecting(&self, formatter: &mut Formatter) -> Result<(), fmt::Error> {
-        formatter.write_str("never failed")
-    }
-
-    fn visit_bytes<E>(self, value: &[u8]) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error
-    {
-        let v = value.iter().cloned().collect();
-        Ok(Edt(v))
-    }
-}
-
-impl<'de> Deserialize<'de> for Edt {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>
-    {
-        deserializer.deserialize_bytes( EdtVisitor)
     }
 }
 
@@ -130,8 +98,7 @@ struct ElPacketBuilder {
     seoj: EchonetObject,
     deoj: EchonetObject,
     esv: Option<ServiceCode>,
-    opc: u8,
-    props: Option<Properties>,
+    props: Properties,
 }
 
 impl ElPacketBuilder {
@@ -141,8 +108,7 @@ impl ElPacketBuilder {
             seoj: Default::default(),
             deoj: Default::default(),
             esv: None,
-            opc: 0,
-            props: None,
+            props: Default::default(),
         }
     }
 
@@ -166,13 +132,8 @@ impl ElPacketBuilder {
         self
     }
 
-    pub fn opc(mut self, opc: u8) -> Self {
-        self.opc = opc;
-        self
-    }
-
     pub fn props(mut self, props: Properties) -> Self {
-        self.props = Some(props);
+        self.props = props;
         self
     }
 
@@ -184,7 +145,6 @@ impl ElPacketBuilder {
             seoj: self.seoj,
             deoj: self.deoj,
             esv: self.esv.unwrap(), // TODO: define error
-            opc: self.opc,
             props: self.props,
         }
     }
@@ -220,43 +180,36 @@ mod test {
     //     );
     // }
 
-    // #[test]
-    // fn deserialize() {
-    //     let input: Vec<u8> = vec![0x10, 0x81, 0, 1, 0xef, 0xff, 0x01, 0x03, 0x08, 0x01, 0x62, 1, 0x80, 0x01, 0x02];
-    //     let config = bincode::DefaultOptions::new()
-    //         .with_big_endian()
-    //         .with_fixint_encoding();
-    //     let decoded: Option<ElPacket> = bincode::deserialize(&input).unwrap();
+    #[test]
+    fn deserialize() {
+        let input: Vec<u8> = vec![0x10, 0x81, 0, 1, 0xef, 0xff, 0x01, 0x03, 0x08, 0x01, 0x62, 1, 0x80, 0x01, 0x02];
+        let mut deserializer = ElDeserializer::new(SliceReader::new(&input));
+        let decoded: ElPacket = serde::Deserialize::deserialize(&mut deserializer).unwrap();
 
-    //     let prop = Property {
-    //         epc: 0x80,
-    //         pdc: 0x01,
-    //         edt: Some(Edt(Box::new([0x02u8]))),
-    //     };
-    //     let expect: Option<ElPacket> = Some(
-    //         ElPacketBuilder::new()
-    //             .transaction_id(1)
-    //             .esv(ServiceCode::Get)
-    //             .seoj(EchonetObject([0xef, 0xff, 0x01]))
-    //             .deoj(EchonetObject([0x03, 0x08, 0x01]))
-    //             .opc(1)
-    //             .props(Properties(Box::new([prop])))
-    //             .build()
-    //     );
+        let prop = Property {
+            epc: 0x80,
+            edt: Edt(vec![0x02]),
+        };
+        let expect  = 
+            ElPacketBuilder::new()
+                .transaction_id(1)
+                .esv(ServiceCode::Get)
+                .seoj(EchonetObject([0xef, 0xff, 0x01]))
+                .deoj(EchonetObject([0x03, 0x08, 0x01]))
+                .props(Properties(vec![prop]))
+                .build();
 
-    //     assert_eq!(expect, decoded);
-    // }
+        assert_eq!(expect, decoded);
+    }
 
-    // #[test]
-    // fn deserialize_tid() {
-    //     let input = [0u8, 1u8];
-    //     let config = bincode::DefaultOptions::new()
-    //         .with_big_endian()
-    //         .with_fixint_encoding();
-    //     let decoded: u16 = config.deserialize(&input).unwrap();
+    #[test]
+    fn deserialize_tid() {
+        let input = [0u8, 1u8];
+        let mut deserializer = ElDeserializer::new(SliceReader::new(&input));
+        let decoded: u16 = serde::Deserialize::deserialize(&mut deserializer).unwrap();
 
-    //     assert_eq!(1, decoded);
-    // }
+        assert_eq!(1, decoded);
+    }
 
     #[test]
     fn deserialize_esv() {
@@ -267,21 +220,42 @@ mod test {
         assert_eq!(ServiceCode::Get, decoded);
     }
 
-    // #[test]
-    // fn deserialize_eoj() {
-    //     let input = [0xefu8, 0xffu8, 0x01u8];
-    //     let decoded: EchonetObject = bincode::deserialize(&input).unwrap();
+    #[test]
+    fn deserialize_eoj() {
+        let input = [0xefu8, 0xffu8, 0x01u8];
+        let mut deserializer = ElDeserializer::new(SliceReader::new(&input));
+        let decoded: EchonetObject = serde::Deserialize::deserialize(&mut deserializer).unwrap();
 
-    //     assert_eq!(EchonetObject([0xefu8, 0xffu8, 0x01u8]), decoded);
-    // }
+        assert_eq!(EchonetObject([0xefu8, 0xffu8, 0x01u8]), decoded);
+    }
 
     #[test]
     fn deserialize_edt() {
         let input: [u8; 2] = [0x01, 0x01];
         let mut deserializer = ElDeserializer::new(SliceReader::new(&input));
-        let decoded:Edt = serde::Deserialize::deserialize(&mut deserializer).unwrap();
+        let decoded: Edt = serde::Deserialize::deserialize(&mut deserializer).unwrap();
 
         let expect = Edt(vec![0x01u8]);
+        assert_eq!(expect, decoded);
+    }
+
+    #[test]
+    fn deserialize_empty_edt() {
+        let input: [u8; 1] = [0u8];
+        let mut deserializer = ElDeserializer::new(SliceReader::new(&input));
+        let decoded: Edt = serde::Deserialize::deserialize(&mut deserializer).unwrap();
+
+        let expect = Edt(vec![]);
+        assert_eq!(expect, decoded);
+    }
+
+    #[test]
+    fn deserialize_props() {
+        let input: Vec<u8> = vec![1, 0x80, 0x01, 0x02];
+        let mut deserializer = ElDeserializer::new(SliceReader::new(&input));
+        let decoded: Properties = serde::Deserialize::deserialize(&mut deserializer).unwrap();
+
+        let expect = Properties(vec![Property{ epc: 0x80, edt: Edt(vec![0x02])}]);
         assert_eq!(expect, decoded);
     }
 }
