@@ -2,6 +2,7 @@
 extern crate alloc;
 
 mod error;
+mod read;
 
 pub mod el_packet;
 pub mod de_echonet_lite;

@@ -5,6 +5,7 @@ use serde::de::Visitor;
 use bare_io as io;
 use alloc::{vec::Vec, boxed::Box};
 use crate::error::{Error, Result, ErrorKind};
+use crate::read::ReadBytesExt;
 
 pub trait EchonetLiteRead<'storage>: io::Read {
     fn get_byte_buffer(&mut self, length: usize) -> Result<Vec<u8>>;
@@ -12,8 +13,6 @@ pub trait EchonetLiteRead<'storage>: io::Read {
     fn forward_read_bytes<V>(&mut self, length: usize, visitor: V) -> Result<V::Value>
     where
         V: serde::de::Visitor<'storage>;
-
-    fn read_u8(&mut self) -> u8;
 }
 
 pub struct SliceReader<'storage> {
@@ -39,7 +38,7 @@ impl <'storage> io::Read for SliceReader<'storage> {
         (&mut self.slice).read(out)
     }
     #[inline(always)]
-    fn read_exact(&mut self, mut out: &mut [u8]) -> io::Result<()> {
+    fn read_exact(&mut self, out: &mut [u8]) -> io::Result<()> {
         (&mut self.slice).read_exact(out)
     }
 }
@@ -68,13 +67,6 @@ impl<'storage> EchonetLiteRead<'storage> for SliceReader<'storage> {
         let r = visitor.visit_borrowed_bytes(&self.slice[..length]);
         self.slice = &self.slice[length..];
         r
-    }
-
-    fn read_u8(&mut self) -> u8 {
-        use bare_io::Read;
-        let mut buf: [u8; 1] = [0];
-        self.read_exact(&mut buf).unwrap();
-        buf[0]
     }
 }
 
@@ -125,7 +117,12 @@ where
     where
         V: Visitor<'de>
     {
-        todo!();
+        let value: u8 = serde::Deserialize::deserialize(self)?;
+        match value {
+            1 => visitor.visit_bool(true),
+            0 => visitor.visit_bool(false),
+            value => Err(ErrorKind::InvalidBoolEncoding(value).into()),
+        }
     }
 
     #[inline]
@@ -133,7 +130,7 @@ where
     where
         V: serde::de::Visitor<'de>,
     {
-        visitor.visit_u8(self.reader.read_u8())
+        visitor.visit_u8(self.reader.read_u8()?)
     }
 
     #[inline]
@@ -141,7 +138,7 @@ where
     where
         V: serde::de::Visitor<'de>,
     {
-        todo!()
+        visitor.visit_i8(self.reader.read_i8()?)
     }
 
     fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value>
@@ -151,21 +148,21 @@ where
         visitor.visit_unit()
     }
 
-    fn deserialize_char<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_char<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: serde::de::Visitor<'de>,
     {
         todo!()
     }
 
-    fn deserialize_str<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_str<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: serde::de::Visitor<'de>,
     {
         todo!()
     }
 
-    fn deserialize_string<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_string<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: serde::de::Visitor<'de>,
     {
@@ -259,7 +256,7 @@ where
         })
     }
 
-    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_option<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: serde::de::Visitor<'de>,
     {
@@ -275,7 +272,7 @@ where
         self.deserialize_tuple(len as usize, visitor)
     }
 
-    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_map<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: serde::de::Visitor<'de>,
     {
@@ -340,49 +337,30 @@ where
         false
     }
 
-    fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value>
+    impl_nums!(u16, deserialize_u16, visit_u16, read_u16);
+    impl_nums!(u32, deserialize_u32, visit_u32, read_u32);
+    impl_nums!(i16, deserialize_i16, visit_i16, read_i16);
+    impl_nums!(i32, deserialize_i32, visit_i32, read_i32);
+
+    fn deserialize_i64<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de> {
         todo!()
     }
 
-    fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_u64<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de> {
         todo!()
     }
 
-    fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_f32<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de> {
         todo!()
     }
 
-    fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value>
-    where
-        V: Visitor<'de> {
-        todo!()
-    }
-
-    fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value>
-    where
-        V: Visitor<'de> {
-        todo!()
-    }
-
-    fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value>
-    where
-        V: Visitor<'de> {
-        todo!()
-    }
-
-    fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value>
-    where
-        V: Visitor<'de> {
-        todo!()
-    }
-
-    fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_f64<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de> {
         todo!()

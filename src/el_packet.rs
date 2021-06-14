@@ -192,11 +192,8 @@ impl ElPacketBuilder {
 
 #[cfg(test)]
 mod test {
-    use std::ops::Deref;
-
     use super::*;
     use crate::de_echonet_lite::{Deserializer as ElDeserializer, SliceReader};
-    use serde::{Deserializer, Serialize, Serializer, ser::SerializeTuple};
 
     // #[test]
     // fn serialize() {
@@ -265,12 +262,9 @@ mod test {
     fn deserialize_esv() {
         let input = [0x62u8];
         let mut deserializer = ElDeserializer::new(SliceReader::new(&input));
-        let decoded:u8 = serde::Deserialize::deserialize(&mut deserializer).unwrap();
+        let decoded: ServiceCode = serde::Deserialize::deserialize(&mut deserializer).unwrap();
 
-        assert_eq!(0x62, decoded);
-        // let decoded: ServiceCode = deserializer.deserialize_u8().unwrap();
-
-        // assert_eq!(ServiceCode::Get, decoded);
+        assert_eq!(ServiceCode::Get, decoded);
     }
 
     // #[test]
