@@ -50,6 +50,11 @@ pub enum ServiceCode {
 
 #[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct EchonetObject([u8; 3]);
+impl From<[u8; 3]> for EchonetObject {
+    fn from(eobj: [u8; 3]) -> Self {
+        Self(eobj)
+    }
+}
 
 #[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct Properties(Vec<Property>);
@@ -88,13 +93,19 @@ impl ElPacketBuilder {
         self
     }
 
-    pub fn seoj(mut self, seoj: EchonetObject) -> Self {
-        self.seoj = seoj;
+    pub fn seoj<T>(mut self, seoj: T) -> Self
+    where
+        T: Into<EchonetObject>,
+    {
+        self.seoj = seoj.into();
         self
     }
 
-    pub fn deoj(mut self, deoj: EchonetObject) -> Self {
-        self.deoj = deoj;
+    pub fn deoj<T>(mut self, deoj: T) -> Self
+    where
+        T: Into<EchonetObject>,
+    {
+        self.deoj = deoj.into();
         self
     }
 
@@ -121,6 +132,32 @@ impl ElPacketBuilder {
     }
 }
 
+macro_rules! prop {
+    ( $epc:expr, [ $( $edt:expr ),* ] ) => {
+        {
+            let mut bytes: Vec<u8> = Vec::new();
+            $(
+                bytes.push($edt);
+            )*
+            Property{ epc: $epc, edt: Edt(bytes) }
+        }
+    };
+}
+
+// TODO: props!(0x80, [0x31])
+// props!([0x80, [1, 2, 3]], [0x81, [1, 2, 3]])
+macro_rules! props {
+    ( $( [ $epc:expr, [ $( $edt:expr ),* ] ] ),* ) => {
+        {
+            let mut props: Vec<Property> = Vec::new();
+            $(
+                props.push( prop!($epc, [ $( $edt ),* ] ) );
+            ),*
+            Properties(props)
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -128,16 +165,13 @@ mod test {
 
     #[test]
     fn serialize() {
-        let prop = Property {
-            epc: 0x80,
-            edt: Edt(vec![0x02u8]),
-        };
+        let props = props!( [ 0x80, [0x02] ], [0x81, [0x01]] );
         let result = ElPacketBuilder::new()
             .transaction_id(1)
             .esv(ServiceCode::Get)
-            .seoj(EchonetObject([0xef, 0xff, 0x01]))
-            .deoj(EchonetObject([0x03, 0x08, 0x01]))
-            .props(Properties(vec![prop]))
+            .seoj([0xefu8, 0xffu8, 0x01u8])
+            .deoj([0x03u8, 0x08u8, 0x01u8])
+            .props(props)
             .build()
             .serialize()
             .unwrap();
