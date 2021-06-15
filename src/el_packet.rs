@@ -4,8 +4,10 @@ use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Serialize_repr, Deserialize_repr};
 
+use crate::{Error, de, ser};
+
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-struct ElPacket {
+pub struct ElPacket {
     ehd1: u8,
     ehd2: u8,
     transaction_id: u16,
@@ -15,9 +17,19 @@ struct ElPacket {
     props: Properties,
 }
 
+impl ElPacket {
+    fn serialize(&self) -> Result<Vec<u8>, Error> {
+        ser::serialize(&self)
+    }
+
+    fn from_bytes(bytes: &[u8]) -> Result<(usize, ElPacket), Error> {
+        de::deserialize(bytes)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy, FromPrimitive, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
-enum ServiceCode {
+pub enum ServiceCode {
     SetISNA = 0x50,
     SetCSNA = 0x51,
     GetSNA = 0x52,
@@ -37,22 +49,22 @@ enum ServiceCode {
 }
 
 #[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
-struct EchonetObject([u8; 3]);
+pub struct EchonetObject([u8; 3]);
 
 #[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
-struct Properties(Vec<Property>);
+pub struct Properties(Vec<Property>);
 
 #[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
-struct Property {
+pub struct Property {
     epc: u8,
     edt: Edt,
 }
 
 #[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
-struct Edt(Vec<u8>);
+pub struct Edt(Vec<u8>);
 
 #[derive(Debug)]
-struct ElPacketBuilder {
+pub struct ElPacketBuilder {
     transaction_id: u16, // builder 作るときに渡しても良いかも
     seoj: EchonetObject,
     deoj: EchonetObject,
@@ -112,9 +124,7 @@ impl ElPacketBuilder {
 #[cfg(test)]
 mod test {
     use super::*;
-    use bare_io::Cursor;
-    use crate::ser::{Serializer as ElSerializer};
-    use crate::de::{Deserializer as ElDeserializer, SliceReader};
+    use crate::de;
 
     #[test]
     fn serialize() {
@@ -122,27 +132,25 @@ mod test {
             epc: 0x80,
             edt: Edt(vec![0x02u8]),
         };
-        let packet = ElPacketBuilder::new()
+        let result = ElPacketBuilder::new()
             .transaction_id(1)
             .esv(ServiceCode::Get)
             .seoj(EchonetObject([0xef, 0xff, 0x01]))
             .deoj(EchonetObject([0x03, 0x08, 0x01]))
             .props(Properties(vec![prop]))
-            .build();
-        let mut buf = [0u8; 15];
-        let mut serializer = ElSerializer::new(Cursor::new(&mut buf[..]));
-        serde::Serialize::serialize(&packet, &mut serializer).unwrap();
+            .build()
+            .serialize()
+            .unwrap();
         assert_eq!(
             vec![0x10, 0x81, 0, 1, 0xef, 0xff, 0x01, 0x03, 0x08, 0x01, 0x62, 1, 0x80, 0x01, 0x02],
-            buf
+            result
         );
     }
 
     #[test]
     fn deserialize() {
         let input: Vec<u8> = vec![0x10, 0x81, 0, 1, 0xef, 0xff, 0x01, 0x03, 0x08, 0x01, 0x62, 1, 0x80, 0x01, 0x02];
-        let mut deserializer = ElDeserializer::new(SliceReader::new(&input));
-        let decoded: ElPacket = serde::Deserialize::deserialize(&mut deserializer).unwrap();
+        let (consumed, decoded): (usize, ElPacket) = ElPacket::from_bytes(&input).unwrap();
 
         let prop = Property {
             epc: 0x80,
@@ -157,14 +165,14 @@ mod test {
                 .props(Properties(vec![prop]))
                 .build();
 
+        assert_eq!(15, consumed);
         assert_eq!(expect, decoded);
     }
 
     #[test]
     fn deserialize_tid() {
         let input = [0u8, 1u8];
-        let mut deserializer = ElDeserializer::new(SliceReader::new(&input));
-        let decoded: u16 = serde::Deserialize::deserialize(&mut deserializer).unwrap();
+        let (_, decoded): (usize, u16) = de::deserialize(&input).unwrap();
 
         assert_eq!(1, decoded);
     }
@@ -172,8 +180,7 @@ mod test {
     #[test]
     fn deserialize_esv() {
         let input = [0x62u8];
-        let mut deserializer = ElDeserializer::new(SliceReader::new(&input));
-        let decoded: ServiceCode = serde::Deserialize::deserialize(&mut deserializer).unwrap();
+        let (_, decoded): (usize, ServiceCode) = de::deserialize(&input).unwrap();
 
         assert_eq!(ServiceCode::Get, decoded);
     }
@@ -181,8 +188,7 @@ mod test {
     #[test]
     fn deserialize_eoj() {
         let input = [0xefu8, 0xffu8, 0x01u8];
-        let mut deserializer = ElDeserializer::new(SliceReader::new(&input));
-        let decoded: EchonetObject = serde::Deserialize::deserialize(&mut deserializer).unwrap();
+        let (_, decoded): (usize, EchonetObject) = de::deserialize(&input).unwrap();
 
         assert_eq!(EchonetObject([0xefu8, 0xffu8, 0x01u8]), decoded);
     }
@@ -190,8 +196,7 @@ mod test {
     #[test]
     fn deserialize_edt() {
         let input: [u8; 2] = [0x01, 0x01];
-        let mut deserializer = ElDeserializer::new(SliceReader::new(&input));
-        let decoded: Edt = serde::Deserialize::deserialize(&mut deserializer).unwrap();
+        let (_, decoded): (usize, Edt) = de::deserialize(&input).unwrap();
 
         let expect = Edt(vec![0x01u8]);
         assert_eq!(expect, decoded);
@@ -200,8 +205,7 @@ mod test {
     #[test]
     fn deserialize_empty_edt() {
         let input: [u8; 1] = [0u8];
-        let mut deserializer = ElDeserializer::new(SliceReader::new(&input));
-        let decoded: Edt = serde::Deserialize::deserialize(&mut deserializer).unwrap();
+        let (_, decoded): (usize, Edt) = de::deserialize(&input).unwrap();
 
         let expect = Edt(vec![]);
         assert_eq!(expect, decoded);
@@ -210,9 +214,8 @@ mod test {
     #[test]
     fn deserialize_props() {
         let input: Vec<u8> = vec![1, 0x80, 0x01, 0x02];
-        let mut deserializer = ElDeserializer::new(SliceReader::new(&input));
-        let decoded: Properties = serde::Deserialize::deserialize(&mut deserializer).unwrap();
-
+        let (_, decoded): (usize, Properties) = de::deserialize(&input).unwrap();
+        
         let expect = Properties(vec![Property{ epc: 0x80, edt: Edt(vec![0x02])}]);
         assert_eq!(expect, decoded);
     }

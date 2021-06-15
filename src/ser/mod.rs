@@ -1,9 +1,35 @@
-use bare_io::Write;
+use bare_io as io;
+use io::Write;
+use alloc::vec::Vec;
 use serde;
 use crate::error::{Error, ErrorKind};
 use write::WriteBytesExt;
 
 mod write;
+
+struct Writer(Vec<u8>);
+impl Write for Writer {
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.0.extend_from_slice(buf);
+        Ok(buf.len())
+    }
+
+    #[inline]
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+pub fn serialize<T: ?Sized>(value: &T) -> Result<Vec<u8>, Error>
+where
+    T: serde::Serialize,
+{
+    let mut writer = Writer(Vec::new());
+    let mut serializer = Serializer::new(&mut writer);
+    serde::Serialize::serialize(value, &mut serializer)?;
+    Ok(writer.0)
+}
 
 pub(crate) struct Serializer<W> {
     writer: W,

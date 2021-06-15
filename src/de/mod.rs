@@ -9,6 +9,23 @@ use read::ReadBytesExt;
 
 mod read;
 
+pub fn deserialize<'a, T>(bytes: &'a [u8]) -> Result<(usize, T)>
+where
+    T: serde::de::Deserialize<'a>,
+{
+    let length = bytes.len();
+    let mut deserializer = Deserializer::new(SliceReader::new(bytes));
+    let result = serde::Deserialize::deserialize(&mut deserializer);
+
+    match result {
+        Ok(packet) => {
+            let consumed = length - deserializer.reader.slice.len();
+            Ok((consumed, packet))
+        },
+        Err(err) => Err(err),
+    }
+}
+
 pub trait EchonetLiteRead<'storage>: io::Read {
     fn get_byte_buffer(&mut self, length: usize) -> Result<Vec<u8>>;
 
@@ -72,7 +89,7 @@ impl<'storage> EchonetLiteRead<'storage> for SliceReader<'storage> {
     }
 }
 
-pub struct Deserializer<R> {
+pub(crate) struct Deserializer<R> {
     reader: R,
 }
 
