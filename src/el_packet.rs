@@ -1,10 +1,9 @@
 #![allow(dead_code)]
 use alloc::vec::Vec;
 use num_derive::FromPrimitive;
-use serde::{Deserialize, Serialize, Serializer, ser::SerializeTuple};
+use serde::{Deserialize, Serialize};
 use serde_repr::{Serialize_repr, Deserialize_repr};
 
-// TODO: deserialize
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 struct ElPacket {
     ehd1: u8,
@@ -40,22 +39,8 @@ enum ServiceCode {
 #[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
 struct EchonetObject([u8; 3]);
 
-#[derive(Debug, PartialEq, Default, Deserialize)]
+#[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
 struct Properties(Vec<Property>);
-impl Serialize for Properties {
-    // In bincode serialization, a slice serializes into a lengh followed by a byte array.
-    // Because we just need a byte array, implement custom serialization here.
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut seq = serializer.serialize_tuple(self.0.len())?;
-        for e in self.0.iter() {
-            seq.serialize_element(e)?;
-        }
-        seq.end()
-    }
-}
 
 #[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
 struct Property {
@@ -63,34 +48,8 @@ struct Property {
     edt: Edt,
 }
 
-#[derive(Debug, PartialEq, Default, Deserialize)]
+#[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
 struct Edt(Vec<u8>);
-impl Serialize for Edt {
-    // In bincode serialization, a slice serializes into a lengh followed by a byte array.
-    // Because we just need a byte array, implement custom serialization here.
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut seq = serializer.serialize_tuple(self.0.len())?;
-        for e in self.0.iter() {
-            seq.serialize_element(e)?;
-        }
-        seq.end()
-    }
-}
-
-// untag Option to avoid bincode serializes Some(T) into [1, ...].
-fn untag_option<S, T>(f: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-    T: Serialize,
-{
-    match f {
-        Some(value) => value.serialize(serializer),
-        None => serializer.serialize_unit(),
-    }
-}
 
 #[derive(Debug)]
 struct ElPacketBuilder {
@@ -153,32 +112,31 @@ impl ElPacketBuilder {
 #[cfg(test)]
 mod test {
     use super::*;
+    use bare_io::Cursor;
+    use crate::ser::{Serializer as ElSerializer};
     use crate::de::{Deserializer as ElDeserializer, SliceReader};
 
-    // #[test]
-    // fn serialize() {
-    //     let prop = Property {
-    //         epc: 0x80,
-    //         pdc: 0x01,
-    //         edt: Some(Edt(vec![0x02u8])),
-    //     };
-    //     let packet = ElPacketBuilder::new()
-    //         .transaction_id(1)
-    //         .esv(ServiceCode::Get)
-    //         .seoj(EchonetObject([0xef, 0xff, 0x01]))
-    //         .deoj(EchonetObject([0x03, 0x08, 0x01]))
-    //         .opc(1)
-    //         .props(Properties(vec![prop]))
-    //         .build();
-    //     let config = bincode::DefaultOptions::new()
-    //         .with_big_endian()
-    //         .with_fixint_encoding();
-    //     let encoded: Vec<u8> = config.serialize(&packet).unwrap();
-    //     assert_eq!(
-    //         vec![0x10, 0x81, 0, 1, 0xef, 0xff, 0x01, 0x03, 0x08, 0x01, 0x62, 1, 0x80, 0x01, 0x02],
-    //         encoded
-    //     );
-    // }
+    #[test]
+    fn serialize() {
+        let prop = Property {
+            epc: 0x80,
+            edt: Edt(vec![0x02u8]),
+        };
+        let packet = ElPacketBuilder::new()
+            .transaction_id(1)
+            .esv(ServiceCode::Get)
+            .seoj(EchonetObject([0xef, 0xff, 0x01]))
+            .deoj(EchonetObject([0x03, 0x08, 0x01]))
+            .props(Properties(vec![prop]))
+            .build();
+        let mut buf = [0u8; 15];
+        let mut serializer = ElSerializer::new(Cursor::new(&mut buf[..]));
+        serde::Serialize::serialize(&packet, &mut serializer).unwrap();
+        assert_eq!(
+            vec![0x10, 0x81, 0, 1, 0xef, 0xff, 0x01, 0x03, 0x08, 0x01, 0x62, 1, 0x80, 0x01, 0x02],
+            buf
+        );
+    }
 
     #[test]
     fn deserialize() {
