@@ -153,7 +153,7 @@ impl ElPacketBuilder {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::de_echonet_lite::{Deserializer as ElDeserializer, SliceReader};
+    use crate::de::{Deserializer as ElDeserializer, SliceReader};
 
     // #[test]
     // fn serialize() {

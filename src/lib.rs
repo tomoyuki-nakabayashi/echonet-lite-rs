@@ -2,8 +2,8 @@
 extern crate alloc;
 
 mod error;
-mod read;
+mod ser;
+mod de;
 
 pub mod el_packet;
-pub mod de_echonet_lite;
 pub use error::{Error, ErrorKind, Result};

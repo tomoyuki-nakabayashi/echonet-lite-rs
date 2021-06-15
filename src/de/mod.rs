@@ -5,7 +5,9 @@ use serde::de::Visitor;
 use bare_io as io;
 use alloc::{vec::Vec, boxed::Box};
 use crate::error::{Error, Result, ErrorKind};
-use crate::read::ReadBytesExt;
+use read::ReadBytesExt;
+
+mod read;
 
 pub trait EchonetLiteRead<'storage>: io::Read {
     fn get_byte_buffer(&mut self, length: usize) -> Result<Vec<u8>>;
