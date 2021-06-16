@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use core::fmt;
 use alloc::vec::Vec;
 use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
@@ -37,6 +38,17 @@ impl ElPacket {
     }
 }
 
+impl fmt::Display for ElPacket {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "EHD: {:02X}{:02X}", self.ehd1, self.ehd2)?;
+        writeln!(f, "TID: {}", self.transaction_id)?;
+        writeln!(f, "SEOJ: {}", self.seoj)?;
+        writeln!(f, "DEOJ: {}", self.deoj)?;
+        write!(f, "{}", self.esv)?;
+        write!(f, "{}", self.props)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy, FromPrimitive, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum ServiceCode {
@@ -58,6 +70,12 @@ pub enum ServiceCode {
     SetGetRes = 0x7E,
 }
 
+impl fmt::Display for ServiceCode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "ESV: {:02X}", *self as u8)
+    }
+}
+
 #[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct EchonetObject([u8; 3]);
 impl From<[u8; 3]> for EchonetObject {
@@ -66,17 +84,51 @@ impl From<[u8; 3]> for EchonetObject {
     }
 }
 
-#[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
-pub struct Properties(Vec<Property>);
-
-#[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
-pub struct Property {
-    epc: u8,
-    edt: Edt,
+impl fmt::Display for EchonetObject {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[{:02X} {:02X} {:02X}]", self.0[0], self.0[1], self.0[2])
+    }
 }
 
 #[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
-pub struct Edt(Vec<u8>);
+pub struct Properties(pub Vec<Property>);
+impl fmt::Display for Properties {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "OPC: {}", self.0.len())?;
+        for prop in self.0.iter() {
+            write!(f, "{}", prop)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
+pub struct Property {
+    pub epc: u8,
+    pub edt: Edt,
+}
+
+impl fmt::Display for Property {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "EPC: {:02X}", self.epc)?;
+        writeln!(f, "{}", self.edt)?;
+        Ok(())
+    }
+}
+
+#[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
+pub struct Edt(pub Vec<u8>);
+
+impl fmt::Display for Edt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "PDC: {}", self.0.len())?;
+        write!(f, "EDT: ")?;
+        for byte in self.0.iter() {
+            write!(f, "{:02X} ", byte)?;
+        }
+        Ok(())
+    }
+}
 
 #[derive(Debug)]
 pub struct ElPacketBuilder {
