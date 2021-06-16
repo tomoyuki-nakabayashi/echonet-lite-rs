@@ -6,23 +6,33 @@ use serde_repr::{Serialize_repr, Deserialize_repr};
 
 use crate::{Error, de, ser};
 
+/// An ECHONET Lite packet representation.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElPacket {
+    // ECHONTE Lite header must be 0x1081
     ehd1: u8,
     ehd2: u8,
+    // unique ID for each packet
     transaction_id: u16,
+    // source ECHONET object
     seoj: EchonetObject,
+    // destination ECHONET object
     deoj: EchonetObject,
+    // ECHONET service code
     esv: ServiceCode,
+    // properties contain opc (Operation count), epc (ECHONET property code), and 
+    // edt (ECHONET data).
     props: Properties,
 }
 
 impl ElPacket {
-    fn serialize(&self) -> Result<Vec<u8>, Error> {
+    /// Serializes an ECHONET Lite packet into byte array.
+    pub fn serialize(&self) -> Result<Vec<u8>, Error> {
         ser::serialize(&self)
     }
 
-    fn from_bytes(bytes: &[u8]) -> Result<(usize, ElPacket), Error> {
+    /// Deserializes an ECHONET Lite packet from byte array.
+    pub fn from_bytes(bytes: &[u8]) -> Result<(usize, ElPacket), Error> {
         de::deserialize(bytes)
     }
 }
@@ -132,6 +142,7 @@ impl ElPacketBuilder {
     }
 }
 
+#[macro_export]
 macro_rules! prop {
     ( $epc:expr, [ $( $edt:expr ),* ] ) => {
         {
@@ -144,15 +155,14 @@ macro_rules! prop {
     };
 }
 
-// TODO: props!(0x80, [0x31])
-// props!([0x80, [1, 2, 3]], [0x81, [1, 2, 3]])
+#[macro_export]
 macro_rules! props {
     ( $( [ $epc:expr, [ $( $edt:expr ),* ] ] ),* ) => {
         {
             let mut props: Vec<Property> = Vec::new();
             $(
                 props.push( prop!($epc, [ $( $edt ),* ] ) );
-            ),*
+            )*
             Properties(props)
         }
     };
@@ -165,7 +175,7 @@ mod test {
 
     #[test]
     fn serialize() {
-        let props = props!( [ 0x80, [0x02] ], [0x81, [0x01]] );
+        let props = props!( [ 0x80, [0x02] ] );
         let result = ElPacketBuilder::new()
             .transaction_id(1)
             .esv(ServiceCode::Get)

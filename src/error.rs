@@ -5,7 +5,10 @@ use core::{fmt, str::Utf8Error};
 
 use serde;
 
+/// The result of a serialization or deserialization operation.
 pub type Result<T> = ::core::result::Result<T, Error>;
+
+/// An error that can be produced during (de)serializing.
 pub type Error = Box<ErrorKind>;
 
 /// The kind of error that can be produced during a serialization or deserialization.
@@ -30,7 +33,7 @@ pub enum ErrorKind {
     /// If (de)serializing a message takes more than the provided size limit, this
     /// error is returned.
     SizeLimit,
-    /// Bincode can not encode sequences of unknown length (like iterators).
+    /// echonet-lite-rs can not encode sequences of unknown length (like iterators).
     SequenceMustHaveLength,
     /// A custom error message from Serde.
     Custom(String),
@@ -78,13 +81,5 @@ impl serde::de::Error for Error {
 impl serde::ser::Error for Error {
     fn custom<T: fmt::Display>(msg: T) -> Self {
         ErrorKind::Custom(msg.to_string()).into()
-    }
-}
-
-#[cfg(test)]
-mod test {
-    #[test]
-    fn test() {
-        assert!(true);
     }
 }

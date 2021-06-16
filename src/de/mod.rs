@@ -314,7 +314,7 @@ where
     where
         V: serde::de::Visitor<'de>,
     {
-        let message = "Bincode does not support Deserializer::deserialize_identifier";
+        let message = "serde-echonet-lite does not support Deserializer::deserialize_identifier";
         Err(Error::custom(message))
     }
 
@@ -348,7 +348,7 @@ where
     where
         V: serde::de::Visitor<'de>,
     {
-        let message = "Bincode does not support Deserializer::deserialize_ignored_any";
+        let message = "serde-echonet-lite does not support Deserializer::deserialize_ignored_any";
         Err(Error::custom(message))
     }
 
