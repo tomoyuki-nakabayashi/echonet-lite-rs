@@ -36,6 +36,11 @@ impl ElPacket {
     pub fn from_bytes(bytes: &[u8]) -> Result<(usize, ElPacket), Error> {
         de::deserialize(bytes)
     }
+
+    pub fn is_response_for(&self, req: &ElPacket) -> bool {
+        self.transaction_id == req.transaction_id &&
+        self.seoj == req.deoj
+    }
 }
 
 impl fmt::Display for ElPacket {
