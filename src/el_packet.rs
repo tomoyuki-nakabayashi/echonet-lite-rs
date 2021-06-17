@@ -8,7 +8,7 @@ use serde_repr::{Serialize_repr, Deserialize_repr};
 use crate::{Error, de, ser};
 
 /// An ECHONET Lite packet representation.
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ElPacket {
     // ECHONTE Lite header must be 0x1081
     ehd1: u8,
@@ -76,7 +76,7 @@ impl fmt::Display for ServiceCode {
     }
 }
 
-#[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
 pub struct EchonetObject([u8; 3]);
 impl From<[u8; 3]> for EchonetObject {
     fn from(eobj: [u8; 3]) -> Self {
@@ -102,7 +102,13 @@ impl fmt::Display for Properties {
     }
 }
 
-#[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
+impl Clone for Properties {
+    fn clone(&self) -> Self {
+        Self(self.0.to_vec())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct Property {
     pub epc: u8,
     pub edt: Edt,
@@ -118,6 +124,11 @@ impl fmt::Display for Property {
 
 #[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct Edt(pub Vec<u8>);
+impl Clone for Edt {
+    fn clone(&self) -> Self {
+        Self(self.0.to_vec())
+    }
+}
 
 impl fmt::Display for Edt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

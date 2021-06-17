@@ -12,4 +12,3 @@ num-traits = "0.2"
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_repr = "0.1"
 bare-io = "0.2"
-byteorder = { version = "1.4", default-features = false }
