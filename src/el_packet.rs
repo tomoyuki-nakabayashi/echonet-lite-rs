@@ -114,6 +114,7 @@ impl fmt::Display for Properties {
             for byte in prop.edt.0.iter() {
                 write!(f, "{:02X} ", byte)?;
             }
+            writeln!(f, "")?;
         }
         Ok(())
     }
