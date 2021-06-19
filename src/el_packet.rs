@@ -16,14 +16,14 @@ pub struct ElPacket {
     // unique ID for each packet
     transaction_id: u16,
     // source ECHONET object
-    seoj: EchonetObject,
+    pub seoj: EchonetObject,
     // destination ECHONET object
-    deoj: EchonetObject,
+    pub deoj: EchonetObject,
     // ECHONET service code
-    esv: ServiceCode,
+    pub esv: ServiceCode,
     // properties contain opc (Operation count), epc (ECHONET property code), and 
     // edt (ECHONET data).
-    props: Properties,
+    pub props: Properties,
 }
 
 impl ElPacket {
