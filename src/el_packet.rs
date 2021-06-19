@@ -95,13 +95,25 @@ impl fmt::Display for EchonetObject {
     }
 }
 
-#[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
+#[derive(PartialEq, Default, Serialize, Deserialize)]
 pub struct Properties(pub Vec<Property>);
-impl fmt::Display for Properties {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl fmt::Debug for Properties {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "OPC: {}", self.0.len())?;
         for prop in self.0.iter() {
             write!(f, "{}", prop)?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Display for Properties {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for prop in self.0.iter() {
+            write!(f, "{:02X}: ", prop.epc)?;
+            for byte in prop.edt.0.iter() {
+                write!(f, "{:02X} ", byte)?;
+            }
         }
         Ok(())
     }
@@ -230,6 +242,19 @@ macro_rules! props {
             let mut props: Vec<Property> = Vec::new();
             $(
                 props.push( prop!($epc, [ $( $edt ),* ] ) );
+            )*
+            Properties(props)
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! bulk_read {
+    ( $( $epc:expr ),* ) => {
+        {
+            let mut props: Vec<Property> = Vec::new();
+            $(
+                props.push( prop!($epc, [] ) );
             )*
             Properties(props)
         }
