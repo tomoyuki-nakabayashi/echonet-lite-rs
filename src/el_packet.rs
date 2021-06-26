@@ -95,7 +95,26 @@ pub enum ServiceCode {
 
 impl fmt::Display for ServiceCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "ESV: {:02X}", *self as u8)
+        write!(f, "ESV: {:02X} ", *self as u8)?;
+        let esv = match self {
+            ServiceCode::SetISNA => "SetISNA",
+            ServiceCode::SetCSNA => "SetCSNA",
+            ServiceCode::GetSNA => "GetSNA",
+            ServiceCode::InfSNA => "InfSNA",
+            ServiceCode::SetGetSNA => "SetGetSNA",
+            ServiceCode::SetI => "SetI",
+            ServiceCode::SetC => "SetC",
+            ServiceCode::Get => "Get",
+            ServiceCode::InfReq => "InfReq",
+            ServiceCode::SetGet => "SetGet",
+            ServiceCode::SetRes => "SetRes",
+            ServiceCode::GetRes => "GetRes",
+            ServiceCode::Inf => "Inf",
+            ServiceCode::InfC => "InfC",
+            ServiceCode::InfCRes => "InfCRes",
+            ServiceCode::SetGetRes => "SetGetRes",
+        };
+        write!(f, "({})", esv)
     }
 }
 
