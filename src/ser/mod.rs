@@ -1,8 +1,8 @@
+use crate::error::{Error, ErrorKind};
+use alloc::vec::Vec;
 use bare_io as io;
 use io::Write;
-use alloc::vec::Vec;
 use serde;
-use crate::error::{Error, ErrorKind};
 use write::WriteBytesExt;
 
 mod write;
@@ -37,9 +37,7 @@ pub(crate) struct Serializer<W> {
 
 impl<W: Write> Serializer<W> {
     pub fn new(writer: W) -> Serializer<W> {
-        Serializer{
-            writer
-        }
+        Serializer { writer }
     }
 }
 
@@ -59,9 +57,9 @@ impl<'a, W: Write> serde::Serializer for &'a mut Serializer<W> {
     }
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
-        self.writer.write_u8(if v { 1 } else { 0 }).map_err(
-            Into::into,
-        )
+        self.writer
+            .write_u8(if v { 1 } else { 0 })
+            .map_err(Into::into)
     }
 
     fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
@@ -123,7 +121,8 @@ impl<'a, W: Write> serde::Serializer for &'a mut Serializer<W> {
 
     fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
     where
-        T: serde::Serialize {
+        T: serde::Serialize,
+    {
         todo!()
     }
 
@@ -146,7 +145,7 @@ impl<'a, W: Write> serde::Serializer for &'a mut Serializer<W> {
         value: &T,
     ) -> Result<Self::Ok, Self::Error>
     where
-        T: serde::Serialize
+        T: serde::Serialize,
     {
         value.serialize(self)
     }
@@ -159,7 +158,8 @@ impl<'a, W: Write> serde::Serializer for &'a mut Serializer<W> {
         _value: &T,
     ) -> Result<Self::Ok, Self::Error>
     where
-        T: serde::Serialize {
+        T: serde::Serialize,
+    {
         todo!()
     }
 
@@ -339,7 +339,11 @@ where
     type Error = Error;
 
     #[inline]
-    fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
+    fn serialize_field<T: ?Sized>(
+        &mut self,
+        _key: &'static str,
+        value: &T,
+    ) -> Result<Self::Ok, Self::Error>
     where
         T: serde::ser::Serialize,
     {
@@ -360,7 +364,11 @@ where
     type Error = Error;
 
     #[inline]
-    fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
+    fn serialize_field<T: ?Sized>(
+        &mut self,
+        _key: &'static str,
+        value: &T,
+    ) -> Result<Self::Ok, Self::Error>
     where
         T: serde::ser::Serialize,
     {

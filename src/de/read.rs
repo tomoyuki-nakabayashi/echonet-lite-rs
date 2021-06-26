@@ -1,20 +1,17 @@
 use bare_io as io;
-use io::Result;
 use core::ptr::copy_nonoverlapping;
+use io::Result;
 
 macro_rules! read_num_bytes {
-    ($ty:ty, $size:expr, $src:expr, $which:ident) => ({
+    ($ty:ty, $size:expr, $src:expr, $which:ident) => {{
         assert!($size == ::core::mem::size_of::<$ty>());
         assert!($size <= $src.len());
         let mut data: $ty = 0;
         unsafe {
-            copy_nonoverlapping(
-                $src.as_ptr(),
-                &mut data as *mut $ty as *mut u8,
-                $size);
+            copy_nonoverlapping($src.as_ptr(), &mut data as *mut $ty as *mut u8, $size);
         }
         data.$which()
-    });
+    }};
 }
 
 pub trait ReadBytesExt: io::Read {

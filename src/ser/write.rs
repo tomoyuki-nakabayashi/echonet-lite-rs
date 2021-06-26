@@ -1,16 +1,16 @@
-use bare_io::Result;
 use bare_io as io;
+use bare_io::Result;
 use core::mem::transmute;
 use core::ptr::copy_nonoverlapping;
 
 macro_rules! write_num_bytes {
-    ($ty:ty, $size:expr, $n:expr, $dst:expr, $which:ident) => ({
+    ($ty:ty, $size:expr, $n:expr, $dst:expr, $which:ident) => {{
         assert!($size <= $dst.len());
         unsafe {
             let bytes = transmute::<_, [u8; $size]>($n.$which());
             copy_nonoverlapping((&bytes).as_ptr(), $dst.as_mut_ptr(), $size);
         }
-    });
+    }};
 }
 
 pub trait WriteBytesExt: io::Write {

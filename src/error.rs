@@ -1,4 +1,7 @@
-use alloc::{string::{String, ToString}, boxed::Box};
+use alloc::{
+    boxed::Box,
+    string::{String, ToString},
+};
 
 use bare_io as io;
 use core::{fmt, str::Utf8Error};

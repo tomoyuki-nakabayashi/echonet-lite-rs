@@ -1,11 +1,11 @@
+use crate::error::{Error, ErrorKind, Result};
+use alloc::{boxed::Box, vec::Vec};
+use bare_io as io;
+use read::ReadBytesExt;
 use serde;
 use serde::de::Error as DeError;
 use serde::de::IntoDeserializer;
 use serde::de::Visitor;
-use bare_io as io;
-use alloc::{vec::Vec, boxed::Box};
-use crate::error::{Error, Result, ErrorKind};
-use read::ReadBytesExt;
 
 mod read;
 
@@ -21,7 +21,7 @@ where
         Ok(packet) => {
             let consumed = length - deserializer.reader.slice.len();
             Ok((consumed, packet))
-        },
+        }
         Err(err) => Err(err),
     }
 }
@@ -45,13 +45,14 @@ impl<'storage> SliceReader<'storage> {
 
     #[inline(always)]
     fn unexpected_eof() -> Box<ErrorKind> {
-        return Box::new(ErrorKind::Io(
-            io::Error::new(io::ErrorKind::UnexpectedEof, ""),
-        ))
+        return Box::new(ErrorKind::Io(io::Error::new(
+            io::ErrorKind::UnexpectedEof,
+            "",
+        )));
     }
 }
 
-impl <'storage> io::Read for SliceReader<'storage> {
+impl<'storage> io::Read for SliceReader<'storage> {
     #[inline(always)]
     fn read(&mut self, out: &mut [u8]) -> io::Result<usize> {
         (&mut self.slice).read(out)
@@ -77,7 +78,7 @@ impl<'storage> EchonetLiteRead<'storage> for SliceReader<'storage> {
     #[inline(always)]
     fn forward_read_bytes<V>(&mut self, length: usize, visitor: V) -> Result<V::Value>
     where
-        V: serde::de::Visitor<'storage>
+        V: serde::de::Visitor<'storage>,
     {
         if length > self.slice.len() {
             return Err(SliceReader::unexpected_eof());
@@ -95,9 +96,7 @@ pub(crate) struct Deserializer<R> {
 
 impl<'de, R: EchonetLiteRead<'de>> Deserializer<R> {
     pub fn new(r: R) -> Deserializer<R> {
-        Deserializer {
-            reader: r,
-        }
+        Deserializer { reader: r }
     }
 
     fn read_vec(&mut self) -> Result<Vec<u8>> {
@@ -110,12 +109,13 @@ macro_rules! impl_nums {
     ($ty:ty, $dser_method:ident, $visitor_method:ident, $reader_method:ident) => {
         #[inline]
         fn $dser_method<V>(self, visitor: V) -> Result<V::Value>
-            where V: serde::de::Visitor<'de>,
+        where
+            V: serde::de::Visitor<'de>,
         {
             let value = self.reader.$reader_method()?;
             visitor.$visitor_method(value)
         }
-    }
+    };
 }
 
 impl<'de, 'a, R> serde::Deserializer<'de> for &'a mut Deserializer<R>
@@ -127,14 +127,14 @@ where
     #[inline]
     fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value>
     where
-        V: Visitor<'de>
+        V: Visitor<'de>,
     {
         Err(Box::new(ErrorKind::DeserializeAnyNotSupported))
     }
 
     fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value>
     where
-        V: Visitor<'de>
+        V: Visitor<'de>,
     {
         let value: u8 = serde::Deserialize::deserialize(self)?;
         match value {
@@ -214,13 +214,14 @@ where
     {
         impl<'de, 'a, R: 'a> serde::de::EnumAccess<'de> for &'a mut Deserializer<R>
         where
-            R: EchonetLiteRead<'de>
+            R: EchonetLiteRead<'de>,
         {
             type Error = Error;
             type Variant = Self;
 
             fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self::Variant)>
-                where V: serde::de::DeserializeSeed<'de>,
+            where
+                V: serde::de::DeserializeSeed<'de>,
             {
                 let idx: u32 = serde::de::Deserialize::deserialize(&mut *self)?;
                 let val: Result<_> = seed.deserialize(idx.into_deserializer());
@@ -240,12 +241,7 @@ where
             len: usize,
         }
 
-        impl<
-            'de,
-            'a,
-            'b: 'a,
-            R: EchonetLiteRead<'de> + 'b
-        > serde::de::SeqAccess<'de> for Access<'a, R> {
+        impl<'de, 'a, 'b: 'a, R: EchonetLiteRead<'de> + 'b> serde::de::SeqAccess<'de> for Access<'a, R> {
             type Error = Error;
 
             fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
@@ -254,10 +250,8 @@ where
             {
                 if self.len > 0 {
                     self.len -= 1;
-                    let value = serde::de::DeserializeSeed::deserialize(
-                        seed,
-                        &mut *self.deserializer,
-                    )?;
+                    let value =
+                        serde::de::DeserializeSeed::deserialize(seed, &mut *self.deserializer)?;
                     Ok(Some(value))
                 } else {
                     Ok(None)
@@ -363,32 +357,36 @@ where
 
     fn deserialize_i64<V>(self, _visitor: V) -> Result<V::Value>
     where
-        V: Visitor<'de> {
+        V: Visitor<'de>,
+    {
         todo!()
     }
 
     fn deserialize_u64<V>(self, _visitor: V) -> Result<V::Value>
     where
-        V: Visitor<'de> {
+        V: Visitor<'de>,
+    {
         todo!()
     }
 
     fn deserialize_f32<V>(self, _visitor: V) -> Result<V::Value>
     where
-        V: Visitor<'de> {
+        V: Visitor<'de>,
+    {
         todo!()
     }
 
     fn deserialize_f64<V>(self, _visitor: V) -> Result<V::Value>
     where
-        V: Visitor<'de> {
+        V: Visitor<'de>,
+    {
         todo!()
     }
 }
 
 impl<'de, 'a, R> serde::de::VariantAccess<'de> for &'a mut Deserializer<R>
 where
-    R: EchonetLiteRead<'de>
+    R: EchonetLiteRead<'de>,
 {
     type Error = Error;
 
@@ -397,23 +395,22 @@ where
     }
 
     fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value>
-        where T: serde::de::DeserializeSeed<'de>,
+    where
+        T: serde::de::DeserializeSeed<'de>,
     {
         serde::de::DeserializeSeed::deserialize(seed, self)
     }
 
-    fn tuple_variant<V>(self,
-                      len: usize,
-                      visitor: V) -> Result<V::Value>
-        where V: serde::de::Visitor<'de>,
+    fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value>
+    where
+        V: serde::de::Visitor<'de>,
     {
         serde::de::Deserializer::deserialize_tuple(self, len, visitor)
     }
 
-    fn struct_variant<V>(self,
-                       fields: &'static [&'static str],
-                       visitor: V) -> Result<V::Value>
-        where V: serde::de::Visitor<'de>,
+    fn struct_variant<V>(self, fields: &'static [&'static str], visitor: V) -> Result<V::Value>
+    where
+        V: serde::de::Visitor<'de>,
     {
         serde::de::Deserializer::deserialize_tuple(self, fields.len(), visitor)
     }

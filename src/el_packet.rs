@@ -1,11 +1,11 @@
 #![allow(dead_code)]
-use core::fmt;
 use alloc::vec::Vec;
+use core::fmt;
 use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
-use serde_repr::{Serialize_repr, Deserialize_repr};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use crate::{Error, de, ser};
+use crate::{de, ser, Error};
 
 /// An ECHONET Lite packet representation.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -21,7 +21,7 @@ pub struct ElPacket {
     pub deoj: EchonetObject,
     // ECHONET service code
     pub esv: ServiceCode,
-    // properties contain opc (Operation count), epc (ECHONET property code), and 
+    // properties contain opc (Operation count), epc (ECHONET property code), and
     // edt (ECHONET data).
     pub props: Properties,
 }
@@ -38,8 +38,7 @@ impl ElPacket {
     }
 
     pub fn is_response_for(&self, req: &ElPacket) -> bool {
-        self.transaction_id == req.transaction_id &&
-        self.seoj == req.deoj
+        self.transaction_id == req.transaction_id && self.seoj == req.deoj
     }
 }
 
@@ -81,6 +80,7 @@ impl fmt::Display for ServiceCode {
     }
 }
 
+// TODO: add methods
 #[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
 pub struct EchonetObject([u8; 3]);
 impl From<[u8; 3]> for EchonetObject {
@@ -269,7 +269,7 @@ mod test {
 
     #[test]
     fn serialize() {
-        let props = props!( [ 0x80, [0x02] ] );
+        let props = props!([0x80, [0x02]]);
         let result = ElPacketBuilder::new()
             .transaction_id(1)
             .esv(ServiceCode::Get)
@@ -287,21 +287,22 @@ mod test {
 
     #[test]
     fn deserialize() {
-        let input: Vec<u8> = vec![0x10, 0x81, 0, 1, 0xef, 0xff, 0x01, 0x03, 0x08, 0x01, 0x62, 1, 0x80, 0x01, 0x02];
+        let input: Vec<u8> = vec![
+            0x10, 0x81, 0, 1, 0xef, 0xff, 0x01, 0x03, 0x08, 0x01, 0x62, 1, 0x80, 0x01, 0x02,
+        ];
         let (consumed, decoded): (usize, ElPacket) = ElPacket::from_bytes(&input).unwrap();
 
         let prop = Property {
             epc: 0x80,
             edt: Edt(vec![0x02]),
         };
-        let expect  = 
-            ElPacketBuilder::new()
-                .transaction_id(1)
-                .esv(ServiceCode::Get)
-                .seoj(EchonetObject([0xef, 0xff, 0x01]))
-                .deoj(EchonetObject([0x03, 0x08, 0x01]))
-                .props(Properties(vec![prop]))
-                .build();
+        let expect = ElPacketBuilder::new()
+            .transaction_id(1)
+            .esv(ServiceCode::Get)
+            .seoj(EchonetObject([0xef, 0xff, 0x01]))
+            .deoj(EchonetObject([0x03, 0x08, 0x01]))
+            .props(Properties(vec![prop]))
+            .build();
 
         assert_eq!(15, consumed);
         assert_eq!(expect, decoded);
@@ -353,8 +354,11 @@ mod test {
     fn deserialize_props() {
         let input: Vec<u8> = vec![1, 0x80, 0x01, 0x02];
         let (_, decoded): (usize, Properties) = de::deserialize(&input).unwrap();
-        
-        let expect = Properties(vec![Property{ epc: 0x80, edt: Edt(vec![0x02])}]);
+
+        let expect = Properties(vec![Property {
+            epc: 0x80,
+            edt: Edt(vec![0x02]),
+        }]);
         assert_eq!(expect, decoded);
     }
 }
