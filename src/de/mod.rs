@@ -2,7 +2,6 @@ use crate::error::{Error, ErrorKind, Result};
 use alloc::{boxed::Box, vec::Vec};
 use bare_io as io;
 use read::ReadBytesExt;
-use serde;
 use serde::de::Error as DeError;
 use serde::de::IntoDeserializer;
 use serde::de::Visitor;
@@ -45,10 +44,10 @@ impl<'storage> SliceReader<'storage> {
 
     #[inline(always)]
     fn unexpected_eof() -> Box<ErrorKind> {
-        return Box::new(ErrorKind::Io(io::Error::new(
+        Box::new(ErrorKind::Io(io::Error::new(
             io::ErrorKind::UnexpectedEof,
             "",
-        )));
+        )))
     }
 }
 
@@ -265,7 +264,7 @@ where
 
         visitor.visit_seq(Access {
             deserializer: self,
-            len: len,
+            len,
         })
     }
 

@@ -37,6 +37,7 @@ impl ElPacket {
         de::deserialize(bytes)
     }
 
+    #[allow(clippy::suspicious_operation_groupings)]
     pub fn is_response_for(&self, req: &ElPacket) -> bool {
         self.transaction_id == req.transaction_id && self.seoj == req.deoj
     }
@@ -59,18 +60,18 @@ pub enum ServiceCode {
     SetISNA = 0x50,
     SetCSNA = 0x51,
     GetSNA = 0x52,
-    INFSNA = 0x53,
+    InfSNA = 0x53,
     SetGetSNA = 0x5E,
     SetI = 0x60,
     SetC = 0x61,
     Get = 0x62,
-    INFREQ = 0x63,
+    InfReq = 0x63,
     SetGet = 0x6E,
     SetRes = 0x71,
     GetRes = 0x72,
-    INF = 0x73,
-    INFC = 0x74,
-    INFCRes = 0x7A,
+    Inf = 0x73,
+    InfC = 0x74,
+    InfCRes = 0x7A,
     SetGetRes = 0x7E,
 }
 
@@ -114,7 +115,7 @@ impl fmt::Display for Properties {
             for byte in prop.edt.0.iter() {
                 write!(f, "{:02X} ", byte)?;
             }
-            writeln!(f, "")?;
+            writeln!(f)?;
         }
         Ok(())
     }
@@ -166,6 +167,12 @@ pub struct ElPacketBuilder {
     deoj: EchonetObject,
     esv: Option<ServiceCode>,
     props: Properties,
+}
+
+impl Default for ElPacketBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ElPacketBuilder {

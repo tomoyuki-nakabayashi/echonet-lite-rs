@@ -2,7 +2,6 @@ use crate::error::{Error, ErrorKind};
 use alloc::vec::Vec;
 use bare_io as io;
 use io::Write;
-use serde;
 use write::WriteBytesExt;
 
 mod write;

@@ -6,8 +6,6 @@ use alloc::{
 use bare_io as io;
 use core::{fmt, str::Utf8Error};
 
-use serde;
-
 /// The result of a serialization or deserialization operation.
 pub type Result<T> = ::core::result::Result<T, Error>;
 
