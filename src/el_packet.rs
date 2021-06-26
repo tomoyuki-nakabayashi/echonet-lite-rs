@@ -54,24 +54,42 @@ impl fmt::Display for ElPacket {
     }
 }
 
+/// Reperesents ECHONET LiteService (ESV).
+/// The service code specifies an operation for properties stipulated by the EPC.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, FromPrimitive, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum ServiceCode {
+    /// A response for SetI; Property value write "response is not possible".
     SetISNA = 0x50,
+    /// A response for SetC; Property value write "response is not possible".
     SetCSNA = 0x51,
+    /// A response for Get; Property value read "response is not possible".
     GetSNA = 0x52,
+    /// A response for InfReq; Property value notification "response is not possible".
     InfSNA = 0x53,
+    /// A response for SetGet; Property value write & read request "response not possible".
     SetGetSNA = 0x5E,
+    /// Property value write request (no response required). Broadcast possible.
     SetI = 0x60,
+    /// Property value write request (response required). Broadcast possible.
     SetC = 0x61,
+    /// Property value read request. Broadcast possible.
     Get = 0x62,
+    /// Property value notification request. Broadcast possible.
     InfReq = 0x63,
+    /// Property value read & write request. Broadcast possible.
     SetGet = 0x6E,
+    /// An individual response for SetC; Property value write response.
     SetRes = 0x71,
+    /// An individual response for Get; Property value read response.
     GetRes = 0x72,
+    /// Property value notification. Both individual notification and broadcast notification.
     Inf = 0x73,
+    /// Individual property value notification (response required).
     InfC = 0x74,
+    /// An individual response for InfC; Property value notification response.
     InfCRes = 0x7A,
+    /// An individual response for SetGet; Property value write & read response.
     SetGetRes = 0x7E,
 }
 
