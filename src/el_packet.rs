@@ -120,16 +120,23 @@ impl fmt::Display for ServiceCode {
 
 // TODO: add methods
 #[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
-pub struct EchonetObject([u8; 3]);
+pub struct EchonetObject{
+    class: [u8; 2],
+    instance: u8,
+}
+
 impl From<[u8; 3]> for EchonetObject {
     fn from(eobj: [u8; 3]) -> Self {
-        Self(eobj)
+        Self {
+            class: [eobj[0], eobj[1]],
+            instance: eobj[2],
+        }
     }
 }
 
 impl fmt::Display for EchonetObject {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[{:02X} {:02X} {:02X}]", self.0[0], self.0[1], self.0[2])
+        write!(f, "[{:02X} {:02X} {:02X}]", self.class[0], self.class[1], self.instance)
     }
 }
 
@@ -343,8 +350,8 @@ mod test {
         let expect = ElPacketBuilder::new()
             .transaction_id(1)
             .esv(ServiceCode::Get)
-            .seoj(EchonetObject([0xef, 0xff, 0x01]))
-            .deoj(EchonetObject([0x03, 0x08, 0x01]))
+            .seoj([0xef, 0xff, 0x01])
+            .deoj([0x03, 0x08, 0x01])
             .props(Properties(vec![prop]))
             .build();
 
@@ -373,7 +380,7 @@ mod test {
         let input = [0xefu8, 0xffu8, 0x01u8];
         let (_, decoded): (usize, EchonetObject) = de::deserialize(&input).unwrap();
 
-        assert_eq!(EchonetObject([0xefu8, 0xffu8, 0x01u8]), decoded);
+        assert_eq!(EchonetObject::from([0xefu8, 0xffu8, 0x01u8]), decoded);
     }
 
     #[test]
