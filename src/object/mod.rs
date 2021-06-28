@@ -1,6 +1,10 @@
 use core::fmt;
 use serde::{Deserialize, Serialize};
 
+mod code {
+    pub const CONTROLLER: [u8; 2] = [0x05, 0xFE];
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
 struct ClassCode([u8; 2]);
 
@@ -13,7 +17,13 @@ impl fmt::Display for ClassCode {
 pub struct Controller;
 impl Controller {
     #[allow(dead_code)]
-    const CODE: [u8; 2] = [0x05, 0xFE];
+    const CODE: [u8; 2] = code::CONTROLLER;
+}
+
+impl fmt::Display for Controller {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Controller: 0x{:02X}{:02X}", Self::CODE[0], Self::CODE[1])
+    }
 }
 
 enum Class {
@@ -23,7 +33,7 @@ enum Class {
 impl From<ClassCode> for Class {
     fn from(code: ClassCode) -> Self {
         match &code.0 {
-            &[0x05, 0xFE] => Class::Controller(Controller),
+            &code::CONTROLLER => Class::Controller(Controller),
             _ => { todo!() }
         }
     }
@@ -31,10 +41,7 @@ impl From<ClassCode> for Class {
 
 impl From<EchonetObject> for Class {
     fn from(obj: EchonetObject) -> Self {
-        match &obj.class.0 {
-            &[0x05, 0xFE] => Class::Controller(Controller),
-            _ => { todo!() }
-        }
+        Self::from(obj.class)
     }
 }
 
