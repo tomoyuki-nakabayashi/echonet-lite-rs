@@ -125,7 +125,7 @@ impl fmt::Debug for Properties {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "OPC: {}", self.0.len())?;
         for prop in self.0.iter() {
-            write!(f, "{}", prop)?;
+            write!(f, "{:?}", prop)?;
         }
         Ok(())
     }
@@ -134,11 +134,7 @@ impl fmt::Debug for Properties {
 impl fmt::Display for Properties {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for prop in self.0.iter() {
-            write!(f, "{:02X}: ", prop.epc)?;
-            for byte in prop.edt.0.iter() {
-                write!(f, "{:02X} ", byte)?;
-            }
-            writeln!(f)?;
+            writeln!(f, "{}", prop)?;
         }
         Ok(())
     }
@@ -150,7 +146,7 @@ impl Clone for Properties {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct Property {
     pub epc: u8,
     pub edt: Edt,
@@ -158,13 +154,21 @@ pub struct Property {
 
 impl fmt::Display for Property {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "EPC: {:02X}", self.epc)?;
-        writeln!(f, "{}", self.edt)?;
+        write!(f, "{:02X}: ", self.epc)?;
+        write!(f, "{}", self.edt)?;
         Ok(())
     }
 }
 
-#[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
+impl fmt::Debug for Property {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "EPC: {:02X}", self.epc)?;
+        writeln!(f, "{:?}", self.edt)?;
+        Ok(())
+    }
+}
+
+#[derive(PartialEq, Default, Serialize, Deserialize)]
 pub struct Edt(pub Vec<u8>);
 impl Clone for Edt {
     fn clone(&self) -> Self {
@@ -173,6 +177,15 @@ impl Clone for Edt {
 }
 
 impl fmt::Display for Edt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for byte in self.0.iter() {
+            write!(f, "{:02X} ", byte)?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Debug for Edt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "PDC: {}", self.0.len())?;
         write!(f, "EDT: ")?;
