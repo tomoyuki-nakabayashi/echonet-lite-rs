@@ -9,3 +9,4 @@ mod object;
 
 pub use el_packet::*;
 pub use error::{Error, ErrorKind, Result};
+pub use object::StorageBatteryPacket;
