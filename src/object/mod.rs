@@ -269,8 +269,8 @@ enum Class {
 
 impl From<ClassCode> for Class {
     fn from(code: ClassCode) -> Self {
-        match &code.0 {
-            &code::CONTROLLER => Class::Controller(Controller),
+        match code.0 {
+            code::CONTROLLER => Class::Controller(Controller),
             _ => {
                 todo!()
             }
