@@ -5,8 +5,8 @@ use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use crate::{de, ser, Error};
 pub use crate::object::EchonetObject;
+use crate::{de, ser, Error};
 
 /// An ECHONET Lite packet representation.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

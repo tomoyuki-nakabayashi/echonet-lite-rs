@@ -4,8 +4,8 @@ extern crate alloc;
 mod de;
 mod el_packet;
 mod error;
-mod ser;
 mod object;
+mod ser;
 
 pub use el_packet::*;
 pub use error::{Error, ErrorKind, Result};

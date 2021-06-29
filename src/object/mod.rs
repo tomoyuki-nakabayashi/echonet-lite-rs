@@ -1,8 +1,8 @@
-use core::fmt;
+use crate::{ElPacket, Properties};
 use core::convert::TryFrom;
+use core::fmt;
+use phf::phf_map;
 use serde::{Deserialize, Serialize};
-use phf::{phf_map};
-use crate::{Properties, ElPacket};
 
 mod code {
     pub const STORAGE_BATTERY: [u8; 2] = [0x02, 0x7D];
@@ -188,6 +188,26 @@ static EVPS_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xEFu8 => "定格電圧（独立時）",
 };
 
+pub struct UnimplementedPacket(ClassCode, Properties);
+impl fmt::Display for UnimplementedPacket {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "Unimplemented Class: {}", self.0)?;
+        for prop in self.1 .0.iter() {
+            if let Some(name) = SUPER_CLASS.get(&prop.epc) {
+                writeln!(f, "[{}]\t {}", name, prop)?;
+                continue;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl From<ElPacket> for UnimplementedPacket {
+    fn from(value: ElPacket) -> Self {
+        UnimplementedPacket(value.seoj.class, value.props)
+    }
+}
+
 pub struct StorageBatteryPacket(Properties);
 impl StorageBatteryPacket {
     #[allow(dead_code)]
@@ -196,11 +216,16 @@ impl StorageBatteryPacket {
 
 impl fmt::Display for StorageBatteryPacket {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "StorageBattery: 0x{:02X}{:02X}", Self::CODE[0], Self::CODE[1])?;
-        for prop in self.0.0.iter() {
+        writeln!(
+            f,
+            "StorageBattery: 0x{:02X}{:02X}",
+            Self::CODE[0],
+            Self::CODE[1]
+        )?;
+        for prop in self.0 .0.iter() {
             if let Some(name) = SUPER_CLASS.get(&prop.epc) {
                 writeln!(f, "[{}]\t {}", name, prop)?;
-                continue
+                continue;
             }
             if let Some(name) = STORAGE_BATTERY_CLASS.get(&prop.epc) {
                 writeln!(f, "[{}]\t {}", name, prop)?;
@@ -215,7 +240,7 @@ impl TryFrom<ElPacket> for StorageBatteryPacket {
     type Error = core::convert::Infallible;
     fn try_from(value: ElPacket) -> Result<Self, Self::Error> {
         if value.seoj.class == ClassCode(code::STORAGE_BATTERY) {
-            return Ok(StorageBatteryPacket(value.props))
+            return Ok(StorageBatteryPacket(value.props));
         }
         todo!()
     }
@@ -229,7 +254,12 @@ impl Controller {
 
 impl fmt::Display for Controller {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Controller: 0x{:02X}{:02X}", Self::CODE[0], Self::CODE[1])
+        write!(
+            f,
+            "Controller: 0x{:02X}{:02X}",
+            Self::CODE[0],
+            Self::CODE[1]
+        )
     }
 }
 
@@ -241,7 +271,9 @@ impl From<ClassCode> for Class {
     fn from(code: ClassCode) -> Self {
         match &code.0 {
             &code::CONTROLLER => Class::Controller(Controller),
-            _ => { todo!() }
+            _ => {
+                todo!()
+            }
         }
     }
 }
@@ -254,7 +286,7 @@ impl From<EchonetObject> for Class {
 
 // TODO: add methods
 #[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
-pub struct EchonetObject{
+pub struct EchonetObject {
     class: ClassCode,
     instance: u8,
 }
