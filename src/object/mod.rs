@@ -1,8 +1,31 @@
 use crate::{ElPacket, Properties};
-use core::convert::TryFrom;
 use core::fmt;
 use phf::phf_map;
 use serde::{Deserialize, Serialize};
+
+pub enum ClassPacket {
+    Unimplemented(UnimplementedPacket),
+    StorageBattery(StorageBatteryPacket),
+}
+
+impl From<ElPacket> for ClassPacket {
+    fn from(value: ElPacket) -> Self {
+        match value.seoj.class {
+            ClassCode(code::STORAGE_BATTERY) => ClassPacket::StorageBattery(value.into()),
+            _ => ClassPacket::Unimplemented(value.into()),
+        }        
+    }
+}
+
+impl fmt::Display for ClassPacket {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ClassPacket::StorageBattery(v) => write!(f, "{}", v)?,
+            ClassPacket::Unimplemented(v) => write!(f, "{}", v)?,
+        }
+        Ok(())
+    }
+}
 
 mod code {
     pub const STORAGE_BATTERY: [u8; 2] = [0x02, 0x7D];
@@ -45,6 +68,7 @@ static SUPER_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0x9Fu8 => "Getプロパティマップ",
 };
 
+#[allow(dead_code)]
 static PROFILE_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xBFu8 => "個体識別情報",
     0xD3u8 => "自ノードインスタンス数",
@@ -54,6 +78,7 @@ static PROFILE_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xD7u8 => "自ノードクラスリストS",
 };
 
+#[allow(dead_code)]
 static HOUSEHOLD_SOLAR_POWER_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xA0u8 => "出力制御設定１",
     0xA1u8 => "出力制御設定２",
@@ -120,8 +145,8 @@ static STORAGE_BATTERY_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xDBu8 => "系統連系状態",
     0xDCu8 => "最小最大充電電力値（独立時）",
     0xDDu8 => "最小最大放電電力値（独立時）",
-    0xDEu8 => "最小最大充電電流値（独立時",
-    0xDFu8 => "最小最大放電電流値（独立時",
+    0xDEu8 => "最小最大充電電流値（独立時）",
+    0xDFu8 => "最小最大放電電流値（独立時）",
     0xE0u8 => "充放電量設定値1",
     0xE1u8 => "充放電量設定値2",
     0xE2u8 => "蓄電残量1",
@@ -140,6 +165,7 @@ static STORAGE_BATTERY_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xEFu8 => "定格電圧（独立時）",
 };
 
+#[allow(dead_code)]
 static EVPS_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xC0u8 => "車載電池の放電可能容量値1",
     0xC1u8 => "車載電池の放電可能容量値2",
@@ -197,6 +223,7 @@ impl fmt::Display for UnimplementedPacket {
                 writeln!(f, "[{}]\t {}", name, prop)?;
                 continue;
             }
+            writeln!(f, "[unknown]\t {}", prop)?;
         }
         Ok(())
     }
@@ -230,19 +257,18 @@ impl fmt::Display for StorageBatteryPacket {
             if let Some(name) = STORAGE_BATTERY_CLASS.get(&prop.epc) {
                 writeln!(f, "[{}]\t {}", name, prop)?;
             }
+            writeln!(f, "[unknown]\t {}", prop)?;
         }
         Ok(())
     }
 }
 
-impl TryFrom<ElPacket> for StorageBatteryPacket {
-    // TODO: エラー処理真面目に
-    type Error = core::convert::Infallible;
-    fn try_from(value: ElPacket) -> Result<Self, Self::Error> {
-        if value.seoj.class == ClassCode(code::STORAGE_BATTERY) {
-            return Ok(StorageBatteryPacket(value.props));
+impl From<ElPacket> for StorageBatteryPacket {
+    fn from(value: ElPacket) -> Self {
+        if value.seoj.class != ClassCode(code::STORAGE_BATTERY) {
+            panic!("source echonet object class must be storage battery.")
         }
-        todo!()
+        StorageBatteryPacket(value.props)
     }
 }
 
