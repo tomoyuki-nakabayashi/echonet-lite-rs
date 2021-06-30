@@ -13,7 +13,7 @@ impl From<ElPacket> for ClassPacket {
         match value.seoj.class {
             ClassCode(code::STORAGE_BATTERY) => ClassPacket::StorageBattery(value.into()),
             _ => ClassPacket::Unimplemented(value.into()),
-        }        
+        }
     }
 }
 
