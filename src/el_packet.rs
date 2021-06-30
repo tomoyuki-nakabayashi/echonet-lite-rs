@@ -42,6 +42,17 @@ impl ElPacket {
     pub fn is_response_for(&self, req: &ElPacket) -> bool {
         self.transaction_id == req.transaction_id && self.seoj == req.deoj
     }
+
+    // TODO: create_response
+    pub fn create_response(&self, esv: ServiceCode, props: Properties) -> ElPacket {
+        ElPacketBuilder::new()
+            .transaction_id(self.transaction_id)
+            .seoj(self.deoj)
+            .deoj(self.seoj)
+            .esv(esv)
+            .props(props)
+            .build()
+    }
 }
 
 impl fmt::Display for ElPacket {
