@@ -5,6 +5,7 @@ use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
+pub use crate::object::EchonetObject;
 use crate::{de, ser, Error};
 
 /// An ECHONET Lite packet representation.
@@ -118,28 +119,13 @@ impl fmt::Display for ServiceCode {
     }
 }
 
-// TODO: add methods
-#[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
-pub struct EchonetObject([u8; 3]);
-impl From<[u8; 3]> for EchonetObject {
-    fn from(eobj: [u8; 3]) -> Self {
-        Self(eobj)
-    }
-}
-
-impl fmt::Display for EchonetObject {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[{:02X} {:02X} {:02X}]", self.0[0], self.0[1], self.0[2])
-    }
-}
-
 #[derive(PartialEq, Default, Serialize, Deserialize)]
 pub struct Properties(pub Vec<Property>);
 impl fmt::Debug for Properties {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "OPC: {}", self.0.len())?;
         for prop in self.0.iter() {
-            write!(f, "{}", prop)?;
+            write!(f, "{:?}", prop)?;
         }
         Ok(())
     }
@@ -148,11 +134,7 @@ impl fmt::Debug for Properties {
 impl fmt::Display for Properties {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for prop in self.0.iter() {
-            write!(f, "{:02X}: ", prop.epc)?;
-            for byte in prop.edt.0.iter() {
-                write!(f, "{:02X} ", byte)?;
-            }
-            writeln!(f)?;
+            writeln!(f, "{}", prop)?;
         }
         Ok(())
     }
@@ -164,7 +146,7 @@ impl Clone for Properties {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct Property {
     pub epc: u8,
     pub edt: Edt,
@@ -172,13 +154,21 @@ pub struct Property {
 
 impl fmt::Display for Property {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "EPC: {:02X}", self.epc)?;
-        writeln!(f, "{}", self.edt)?;
+        write!(f, "{:02X}: ", self.epc)?;
+        write!(f, "{}", self.edt)?;
         Ok(())
     }
 }
 
-#[derive(Debug, PartialEq, Default, Serialize, Deserialize)]
+impl fmt::Debug for Property {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "EPC: {:02X}", self.epc)?;
+        writeln!(f, "{:?}", self.edt)?;
+        Ok(())
+    }
+}
+
+#[derive(PartialEq, Default, Serialize, Deserialize)]
 pub struct Edt(pub Vec<u8>);
 impl Clone for Edt {
     fn clone(&self) -> Self {
@@ -187,6 +177,15 @@ impl Clone for Edt {
 }
 
 impl fmt::Display for Edt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for byte in self.0.iter() {
+            write!(f, "{:02X} ", byte)?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Debug for Edt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "PDC: {}", self.0.len())?;
         write!(f, "EDT: ")?;
@@ -343,8 +342,8 @@ mod test {
         let expect = ElPacketBuilder::new()
             .transaction_id(1)
             .esv(ServiceCode::Get)
-            .seoj(EchonetObject([0xef, 0xff, 0x01]))
-            .deoj(EchonetObject([0x03, 0x08, 0x01]))
+            .seoj([0xef, 0xff, 0x01])
+            .deoj([0x03, 0x08, 0x01])
             .props(Properties(vec![prop]))
             .build();
 
@@ -373,7 +372,7 @@ mod test {
         let input = [0xefu8, 0xffu8, 0x01u8];
         let (_, decoded): (usize, EchonetObject) = de::deserialize(&input).unwrap();
 
-        assert_eq!(EchonetObject([0xefu8, 0xffu8, 0x01u8]), decoded);
+        assert_eq!(EchonetObject::from([0xefu8, 0xffu8, 0x01u8]), decoded);
     }
 
     #[test]
