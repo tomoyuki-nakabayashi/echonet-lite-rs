@@ -327,12 +327,7 @@ impl EvpsPacket {
 
 impl fmt::Display for EvpsPacket {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(
-            f,
-            "EVPS: 0x{:02X}{:02X}",
-            Self::CODE[0],
-            Self::CODE[1]
-        )?;
+        writeln!(f, "EVPS: 0x{:02X}{:02X}", Self::CODE[0], Self::CODE[1])?;
         for prop in self.0 .0.iter() {
             if let Some(name) = SUPER_CLASS.get(&prop.epc) {
                 writeln!(f, "[{}]\t {}", name, prop)?;
@@ -365,12 +360,7 @@ impl ProfilePacket {
 
 impl fmt::Display for ProfilePacket {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(
-            f,
-            "Profile: 0x{:02X}{:02X}",
-            Self::CODE[0],
-            Self::CODE[1]
-        )?;
+        writeln!(f, "Profile: 0x{:02X}{:02X}", Self::CODE[0], Self::CODE[1])?;
         for prop in self.0 .0.iter() {
             if let Some(name) = SUPER_CLASS.get(&prop.epc) {
                 writeln!(f, "[{}]\t {}", name, prop)?;
