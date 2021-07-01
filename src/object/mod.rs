@@ -11,6 +11,22 @@ pub enum ClassPacket {
     Profile(ProfilePacket),
 }
 
+impl ClassPacket {
+    pub fn new(eoj: EchonetObject, props: Properties) -> ClassPacket {
+        match eoj.class {
+            ClassCode(code::HOUSEHOLD_SOLAR_POWER) => {
+                ClassPacket::SolarPower(SolarPowerPacket(props))
+            }
+            ClassCode(code::STORAGE_BATTERY) => {
+                ClassPacket::StorageBattery(StorageBatteryPacket(props))
+            }
+            ClassCode(code::EVPS) => ClassPacket::Evps(EvpsPacket(props)),
+            ClassCode(code::PROFILE) => ClassPacket::Profile(ProfilePacket(props)),
+            _ => ClassPacket::Unimplemented(UnimplementedPacket(eoj.class, props)),
+        }
+    }
+}
+
 impl From<ElPacket> for ClassPacket {
     fn from(value: ElPacket) -> Self {
         match value.seoj.class {
