@@ -5,13 +5,35 @@ use serde::{Deserialize, Serialize};
 
 pub enum ClassPacket {
     Unimplemented(UnimplementedPacket),
+    SolarPower(SolarPowerPacket),
     StorageBattery(StorageBatteryPacket),
+    Evps(EvpsPacket),
+    Profile(ProfilePacket),
+}
+
+impl ClassPacket {
+    pub fn new(eoj: EchonetObject, props: Properties) -> ClassPacket {
+        match eoj.class {
+            ClassCode(code::HOUSEHOLD_SOLAR_POWER) => {
+                ClassPacket::SolarPower(SolarPowerPacket(props))
+            }
+            ClassCode(code::STORAGE_BATTERY) => {
+                ClassPacket::StorageBattery(StorageBatteryPacket(props))
+            }
+            ClassCode(code::EVPS) => ClassPacket::Evps(EvpsPacket(props)),
+            ClassCode(code::PROFILE) => ClassPacket::Profile(ProfilePacket(props)),
+            _ => ClassPacket::Unimplemented(UnimplementedPacket(eoj.class, props)),
+        }
+    }
 }
 
 impl From<ElPacket> for ClassPacket {
     fn from(value: ElPacket) -> Self {
         match value.seoj.class {
+            ClassCode(code::HOUSEHOLD_SOLAR_POWER) => ClassPacket::SolarPower(value.into()),
             ClassCode(code::STORAGE_BATTERY) => ClassPacket::StorageBattery(value.into()),
+            ClassCode(code::EVPS) => ClassPacket::Evps(value.into()),
+            ClassCode(code::PROFILE) => ClassPacket::Profile(value.into()),
             _ => ClassPacket::Unimplemented(value.into()),
         }
     }
@@ -20,7 +42,10 @@ impl From<ElPacket> for ClassPacket {
 impl fmt::Display for ClassPacket {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            ClassPacket::SolarPower(v) => write!(f, "{}", v)?,
             ClassPacket::StorageBattery(v) => write!(f, "{}", v)?,
+            ClassPacket::Evps(v) => write!(f, "{}", v)?,
+            ClassPacket::Profile(v) => write!(f, "{}", v)?,
             ClassPacket::Unimplemented(v) => write!(f, "{}", v)?,
         }
         Ok(())
@@ -28,8 +53,11 @@ impl fmt::Display for ClassPacket {
 }
 
 mod code {
+    pub const HOUSEHOLD_SOLAR_POWER: [u8; 2] = [0x02, 0x79];
     pub const STORAGE_BATTERY: [u8; 2] = [0x02, 0x7D];
+    pub const EVPS: [u8; 2] = [0x02, 0x7E];
     pub const CONTROLLER: [u8; 2] = [0x05, 0xFE];
+    pub const PROFILE: [u8; 2] = [0x0E, 0xF0];
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
@@ -68,7 +96,6 @@ static SUPER_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0x9Fu8 => "Getプロパティマップ",
 };
 
-#[allow(dead_code)]
 static PROFILE_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xBFu8 => "個体識別情報",
     0xD3u8 => "自ノードインスタンス数",
@@ -78,7 +105,6 @@ static PROFILE_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xD7u8 => "自ノードクラスリストS",
 };
 
-#[allow(dead_code)]
 static HOUSEHOLD_SOLAR_POWER_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xA0u8 => "出力制御設定１",
     0xA1u8 => "出力制御設定２",
@@ -165,7 +191,6 @@ static STORAGE_BATTERY_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xEFu8 => "定格電圧（独立時）",
 };
 
-#[allow(dead_code)]
 static EVPS_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xC0u8 => "車載電池の放電可能容量値1",
     0xC1u8 => "車載電池の放電可能容量値2",
@@ -235,6 +260,44 @@ impl From<ElPacket> for UnimplementedPacket {
     }
 }
 
+pub struct SolarPowerPacket(Properties);
+impl SolarPowerPacket {
+    #[allow(dead_code)]
+    const CODE: [u8; 2] = code::HOUSEHOLD_SOLAR_POWER;
+}
+
+impl fmt::Display for SolarPowerPacket {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(
+            f,
+            "House Hold Solar Power: 0x{:02X}{:02X}",
+            Self::CODE[0],
+            Self::CODE[1]
+        )?;
+        for prop in self.0 .0.iter() {
+            if let Some(name) = SUPER_CLASS.get(&prop.epc) {
+                writeln!(f, "[{}]\t {}", name, prop)?;
+                continue;
+            }
+            if let Some(name) = HOUSEHOLD_SOLAR_POWER_CLASS.get(&prop.epc) {
+                writeln!(f, "[{}]\t {}", name, prop)?;
+                continue;
+            }
+            writeln!(f, "[unknown]\t {}", prop)?;
+        }
+        Ok(())
+    }
+}
+
+impl From<ElPacket> for SolarPowerPacket {
+    fn from(value: ElPacket) -> Self {
+        if value.seoj.class != ClassCode(Self::CODE) {
+            panic!("source echonet object class must be house hold solar power class.")
+        }
+        SolarPowerPacket(value.props)
+    }
+}
+
 pub struct StorageBatteryPacket(Properties);
 impl StorageBatteryPacket {
     #[allow(dead_code)]
@@ -265,10 +328,76 @@ impl fmt::Display for StorageBatteryPacket {
 
 impl From<ElPacket> for StorageBatteryPacket {
     fn from(value: ElPacket) -> Self {
-        if value.seoj.class != ClassCode(code::STORAGE_BATTERY) {
+        if value.seoj.class != ClassCode(Self::CODE) {
             panic!("source echonet object class must be storage battery.")
         }
         StorageBatteryPacket(value.props)
+    }
+}
+
+pub struct EvpsPacket(Properties);
+impl EvpsPacket {
+    #[allow(dead_code)]
+    const CODE: [u8; 2] = code::EVPS;
+}
+
+impl fmt::Display for EvpsPacket {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "EVPS: 0x{:02X}{:02X}", Self::CODE[0], Self::CODE[1])?;
+        for prop in self.0 .0.iter() {
+            if let Some(name) = SUPER_CLASS.get(&prop.epc) {
+                writeln!(f, "[{}]\t {}", name, prop)?;
+                continue;
+            }
+            if let Some(name) = EVPS_CLASS.get(&prop.epc) {
+                writeln!(f, "[{}]\t {}", name, prop)?;
+                continue;
+            }
+            writeln!(f, "[unknown]\t {}", prop)?;
+        }
+        Ok(())
+    }
+}
+
+impl From<ElPacket> for EvpsPacket {
+    fn from(value: ElPacket) -> Self {
+        if value.seoj.class != ClassCode(Self::CODE) {
+            panic!("source echonet object class must be EVPS class.")
+        }
+        EvpsPacket(value.props)
+    }
+}
+
+pub struct ProfilePacket(Properties);
+impl ProfilePacket {
+    #[allow(dead_code)]
+    const CODE: [u8; 2] = code::PROFILE;
+}
+
+impl fmt::Display for ProfilePacket {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "Profile: 0x{:02X}{:02X}", Self::CODE[0], Self::CODE[1])?;
+        for prop in self.0 .0.iter() {
+            if let Some(name) = SUPER_CLASS.get(&prop.epc) {
+                writeln!(f, "[{}]\t {}", name, prop)?;
+                continue;
+            }
+            if let Some(name) = PROFILE_CLASS.get(&prop.epc) {
+                writeln!(f, "[{}]\t {}", name, prop)?;
+                continue;
+            }
+            writeln!(f, "[unknown]\t {}", prop)?;
+        }
+        Ok(())
+    }
+}
+
+impl From<ElPacket> for ProfilePacket {
+    fn from(value: ElPacket) -> Self {
+        if value.seoj.class != ClassCode(Self::CODE) {
+            panic!("source echonet object class must be profile class.")
+        }
+        ProfilePacket(value.props)
     }
 }
 
