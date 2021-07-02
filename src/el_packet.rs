@@ -160,14 +160,17 @@ impl Properties {
         } else {
             None
         }
-        
     }
 
     pub fn iter(&self) -> core::slice::Iter<Property> {
         self.0.iter()
     }
+}
 
-    pub fn into_iter(self) -> alloc::vec::IntoIter<Property> {
+impl core::iter::IntoIterator for Properties {
+    type Item = Property;
+    type IntoIter = alloc::vec::IntoIter<Property>;
+    fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
     }
 }
