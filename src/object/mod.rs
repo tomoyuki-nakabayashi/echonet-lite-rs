@@ -243,7 +243,7 @@ pub struct UnimplementedPacket(ClassCode, Properties);
 impl fmt::Display for UnimplementedPacket {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "Unimplemented Class: {}", self.0)?;
-        for prop in self.1 .0.iter() {
+        for prop in self.1.iter() {
             if let Some(name) = SUPER_CLASS.get(&prop.epc) {
                 writeln!(f, "[{}]\t {}", name, prop)?;
                 continue;
@@ -274,7 +274,7 @@ impl fmt::Display for SolarPowerPacket {
             Self::CODE[0],
             Self::CODE[1]
         )?;
-        for prop in self.0 .0.iter() {
+        for prop in self.0.iter() {
             if let Some(name) = SUPER_CLASS.get(&prop.epc) {
                 writeln!(f, "[{}]\t {}", name, prop)?;
                 continue;
@@ -312,7 +312,7 @@ impl fmt::Display for StorageBatteryPacket {
             Self::CODE[0],
             Self::CODE[1]
         )?;
-        for prop in self.0 .0.iter() {
+        for prop in self.0.iter() {
             if let Some(name) = SUPER_CLASS.get(&prop.epc) {
                 writeln!(f, "[{}]\t {}", name, prop)?;
                 continue;
@@ -345,7 +345,7 @@ impl EvpsPacket {
 impl fmt::Display for EvpsPacket {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "EVPS: 0x{:02X}{:02X}", Self::CODE[0], Self::CODE[1])?;
-        for prop in self.0 .0.iter() {
+        for prop in self.0.iter() {
             if let Some(name) = SUPER_CLASS.get(&prop.epc) {
                 writeln!(f, "[{}]\t {}", name, prop)?;
                 continue;
@@ -378,7 +378,7 @@ impl ProfilePacket {
 impl fmt::Display for ProfilePacket {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "Profile: 0x{:02X}{:02X}", Self::CODE[0], Self::CODE[1])?;
-        for prop in self.0 .0.iter() {
+        for prop in self.0.iter() {
             if let Some(name) = SUPER_CLASS.get(&prop.epc) {
                 writeln!(f, "[{}]\t {}", name, prop)?;
                 continue;

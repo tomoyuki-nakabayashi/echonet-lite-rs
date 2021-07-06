@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 use alloc::vec::Vec;
 use core::fmt;
+use core::ops::{Deref, DerefMut};
 use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -147,7 +148,54 @@ impl fmt::Display for ServiceCode {
 }
 
 #[derive(PartialEq, Default, Serialize, Deserialize)]
-pub struct Properties(pub Vec<Property>);
+pub struct Properties(Vec<Property>);
+impl Properties {
+    pub fn num(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn get(&self, index: usize) -> Option<&Property> {
+        if index < self.num() {
+            Some(&self.0[index])
+        } else {
+            None
+        }
+    }
+
+    pub fn iter(&self) -> core::slice::Iter<Property> {
+        self.0.iter()
+    }
+}
+
+impl core::iter::IntoIterator for Properties {
+    type Item = Property;
+    type IntoIter = alloc::vec::IntoIter<Property>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl Deref for Properties {
+    type Target = Vec<Property>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Properties {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+// TODO: from Iter<Property>?
+impl From<Vec<Property>> for Properties {
+    fn from(props: Vec<Property>) -> Self {
+        Self(props)
+    }
+}
+
 impl fmt::Debug for Properties {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "OPC: {}", self.0.len())?;
@@ -306,6 +354,7 @@ macro_rules! prop {
     };
 }
 
+// TODO: もう少し効率良い実装に
 #[macro_export]
 macro_rules! props {
     ( $( [ $epc:expr, [ $( $edt:expr ),* ] ] ),* ) => {
@@ -314,7 +363,7 @@ macro_rules! props {
             $(
                 props.push( prop!($epc, [ $( $edt ),* ] ) );
             )*
-            Properties(props)
+            Properties::from(props)
         }
     };
 }
@@ -430,5 +479,15 @@ mod test {
             edt: Edt(vec![0x02]),
         }]);
         assert_eq!(expect, decoded);
+    }
+
+    #[test]
+    fn iter_properties() {
+        let props = props!([0x80, [0x02]]);
+        let expect = prop!(0x80, [0x02]);
+        assert_eq!(1usize, props.num());
+        for prop in props.iter() {
+            assert_eq!(expect, *prop);
+        }
     }
 }
