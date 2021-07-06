@@ -9,6 +9,15 @@ pub use crate::object::EchonetObject;
 use crate::{de, ser, Error};
 
 /// An ECHONET Lite packet representation.
+///
+/// ECHONET Lite SPEC shows an ECHONET Lite packet contains
+/// - EHD1: ECHONET Lite message header1 (1-byte)
+/// - EHD2: ECHONET Lite message header2 (1-byte)
+/// - SEOJ: Source ECHONET Lite object specification (3-byte)
+/// - DEOJ: Destination ECHONET Lite object specification (3-byte)
+/// - ESV: ECHONET Lite service
+/// - OPC: Number of processing properties
+/// - (EPC, PDC, EDT) * OPC
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ElPacket {
     // ECHONTE Lite header must be 0x1081
@@ -38,12 +47,19 @@ impl ElPacket {
         de::deserialize(bytes)
     }
 
+    /// Returns whether `self` is a response for the `req`. 
     #[allow(clippy::suspicious_operation_groupings)]
     pub fn is_response_for(&self, req: &ElPacket) -> bool {
         self.transaction_id == req.transaction_id && self.seoj == req.deoj
     }
 
-    // TODO: create_response
+    /// Creates a new response for itself.
+    /// 
+    /// `esv` must be one of response service code.
+    /// `props` contains all response properties.
+    ///
+    /// The created response packet has the same transaction ID as original packet.
+    /// The source and the destination are reversed.
     pub fn create_response(&self, esv: ServiceCode, props: Properties) -> ElPacket {
         ElPacketBuilder::new()
             .transaction_id(self.transaction_id)

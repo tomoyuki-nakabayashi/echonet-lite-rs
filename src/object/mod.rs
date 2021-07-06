@@ -319,6 +319,7 @@ impl fmt::Display for StorageBatteryPacket {
             }
             if let Some(name) = STORAGE_BATTERY_CLASS.get(&prop.epc) {
                 writeln!(f, "[{}]\t {}", name, prop)?;
+                continue;
             }
             writeln!(f, "[unknown]\t {}", prop)?;
         }
