@@ -47,14 +47,14 @@ impl ElPacket {
         de::deserialize(bytes)
     }
 
-    /// Returns whether `self` is a response for the `req`. 
+    /// Returns whether `self` is a response for the `req`.
     #[allow(clippy::suspicious_operation_groupings)]
     pub fn is_response_for(&self, req: &ElPacket) -> bool {
         self.transaction_id == req.transaction_id && self.seoj == req.deoj
     }
 
     /// Creates a new response for itself.
-    /// 
+    ///
     /// `esv` must be one of response service code.
     /// `props` contains all response properties.
     ///
