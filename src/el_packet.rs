@@ -78,7 +78,7 @@ impl fmt::Display for ElPacket {
         writeln!(f, "TID: {}", self.transaction_id)?;
         writeln!(f, "SEOJ: {}", self.seoj)?;
         writeln!(f, "DEOJ: {}", self.deoj)?;
-        write!(f, "{}", self.esv)?;
+        writeln!(f, "{}", self.esv)?;
         write!(f, "{}", self.props)
     }
 }
