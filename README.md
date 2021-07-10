@@ -8,7 +8,7 @@ but not included
 - transport layer (usually, UDP with IPv4/IPv6) implementation
 - specific ECHONET Lite object behavior
 
-see exmaples to know how to communicate with ECHONTE Lite node.
+see [exmaples](./examples) to know how to communicate with ECHONTE Lite node.
 
 ## About ECHONET Lite
 

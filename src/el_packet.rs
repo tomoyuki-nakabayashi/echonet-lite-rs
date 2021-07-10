@@ -355,13 +355,13 @@ macro_rules! prop {
 }
 
 // TODO: もう少し効率良い実装に
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! props {
     ( $( [ $epc:expr, [ $( $edt:expr ),* ] ] ),* ) => {
         {
             let mut props: Vec<Property> = Vec::new();
             $(
-                props.push( prop!($epc, [ $( $edt ),* ] ) );
+                props.push( $crate::prop!($epc, [ $( $edt ),* ] ) );
             )*
             Properties::from(props)
         }
@@ -374,7 +374,7 @@ macro_rules! bulk_read {
         {
             let mut props: Vec<Property> = Vec::new();
             $(
-                props.push( prop!($epc, [] ) );
+                props.push( $crate::prop!($epc, [] ) );
             )*
             Properties(props)
         }

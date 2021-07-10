@@ -7,6 +7,6 @@ mod error;
 mod object;
 mod ser;
 
+pub mod prelude;
 pub use el_packet::*;
 pub use error::{Error, ErrorKind, Result};
-pub use object::ClassPacket;

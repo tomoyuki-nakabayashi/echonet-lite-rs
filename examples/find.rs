@@ -1,5 +1,5 @@
 use echonet_lite as el;
-use el::{prop, props, Edt, Properties, Property};
+use el::prelude::*;
 use std::io;
 use std::net::{Ipv4Addr, UdpSocket};
 use std::time::Duration;
@@ -17,7 +17,7 @@ fn main() -> io::Result<()> {
         .seoj([0x05u8, 0xFFu8, 0x01u8])
         .deoj([0x0Eu8, 0xF0u8, 0x01u8])
         .esv(el::ServiceCode::Get)
-        .props(props!([0x80, []]))
+        .props(el::props!([0x80, []]))
         .build();
     let bytes = packet.serialize().expect("fail to serialize");
 
