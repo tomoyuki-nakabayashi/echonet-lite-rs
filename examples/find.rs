@@ -1,4 +1,4 @@
-use echonet_lite_rs as el;
+use echonet_lite as el;
 use el::{prop, props, Edt, Properties, Property};
 use std::io;
 use std::net::{Ipv4Addr, UdpSocket};
