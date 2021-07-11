@@ -243,8 +243,26 @@ impl fmt::Debug for Property {
     }
 }
 
+/// ECHONET property value data.
+///
+/// EDT consists of data for the relevant ECHONET property (EPC) and
+/// control by an ESV (ServiceCode).
 #[derive(PartialEq, Default, Serialize, Deserialize)]
-pub struct Edt(pub Vec<u8>);
+pub struct Edt(Vec<u8>);
+
+impl Edt {
+    pub fn new(value: Vec<u8>) -> Edt {
+        Edt(value)
+    }
+}
+
+impl Deref for Edt {
+    type Target = [u8];
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl Clone for Edt {
     fn clone(&self) -> Self {
         Self(self.0.to_vec())
@@ -271,9 +289,25 @@ impl fmt::Debug for Edt {
     }
 }
 
+/// Builds a ECHONET Lite packet.
+///
+/// # Examples
+///
+/// ```
+/// use echonet_lite as el;
+/// use el::prelude::*;
+///
+/// let packet = el::ElPacketBuilder::new()
+///     .transaction_id(1)
+///     .seoj([0x05u8, 0xFFu8, 0x01u8])
+///     .deoj([0x0Eu8, 0xF0u8, 0x01u8])
+///     .esv(el::ServiceCode::Get)
+///     .props(el::props!([0x80, []]))
+///     .build();
+/// ```
 #[derive(Debug)]
 pub struct ElPacketBuilder {
-    transaction_id: u16, // builder 作るときに渡しても良いかも
+    transaction_id: u16,
     seoj: EchonetObject,
     deoj: EchonetObject,
     esv: Option<ServiceCode>,
@@ -349,7 +383,7 @@ macro_rules! prop {
             $(
                 bytes.push($edt);
             )*
-            Property{ epc: $epc, edt: Edt(bytes) }
+            Property{ epc: $epc, edt: Edt::new(bytes) }
         }
     };
 }
