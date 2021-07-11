@@ -147,6 +147,7 @@ impl fmt::Display for ServiceCode {
     }
 }
 
+/// An ECHONET property array consists of `OPC, EPC1, PDC1, EDT1 ... EPCn, PDCn, EDTn`.
 #[derive(PartialEq, Default, Serialize, Deserialize)]
 pub struct Properties(Vec<Property>);
 impl Properties {
@@ -221,6 +222,7 @@ impl Clone for Properties {
     }
 }
 
+/// A ECHONET property putting EPC, OPC, and EDT together.
 #[derive(Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct Property {
     pub epc: u8,
@@ -243,8 +245,26 @@ impl fmt::Debug for Property {
     }
 }
 
+/// ECHONET property value data.
+///
+/// EDT consists of data for the relevant ECHONET property (EPC) and
+/// control by an ESV (ServiceCode).
 #[derive(PartialEq, Default, Serialize, Deserialize)]
-pub struct Edt(pub Vec<u8>);
+pub struct Edt(Vec<u8>);
+
+impl Edt {
+    pub fn new(value: Vec<u8>) -> Edt {
+        Edt(value)
+    }
+}
+
+impl Deref for Edt {
+    type Target = [u8];
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl Clone for Edt {
     fn clone(&self) -> Self {
         Self(self.0.to_vec())
@@ -271,9 +291,25 @@ impl fmt::Debug for Edt {
     }
 }
 
+/// Builds a ECHONET Lite packet.
+///
+/// # Examples
+///
+/// ```
+/// use echonet_lite as el;
+/// use el::prelude::*;
+///
+/// let packet = el::ElPacketBuilder::new()
+///     .transaction_id(1)
+///     .seoj([0x05u8, 0xFFu8, 0x01u8])
+///     .deoj([0x0Eu8, 0xF0u8, 0x01u8])
+///     .esv(el::ServiceCode::Get)
+///     .props(el::props!([0x80, []]))
+///     .build();
+/// ```
 #[derive(Debug)]
 pub struct ElPacketBuilder {
-    transaction_id: u16, // builder 作るときに渡しても良いかも
+    transaction_id: u16,
     seoj: EchonetObject,
     deoj: EchonetObject,
     esv: Option<ServiceCode>,
@@ -341,6 +377,14 @@ impl ElPacketBuilder {
     }
 }
 
+/// Create a Property object from a pair of EPC (u8) and EDT ([u8; _]).
+///
+/// # Examples
+///
+/// ```
+/// use echonet_lite::{prelude::*, prop};
+/// let prop = prop!(0x80, [0x30]);
+/// ```
 #[macro_export]
 macro_rules! prop {
     ( $epc:expr, [ $( $edt:expr ),* ] ) => {
@@ -349,34 +393,49 @@ macro_rules! prop {
             $(
                 bytes.push($edt);
             )*
-            Property{ epc: $epc, edt: Edt(bytes) }
+            Property{ epc: $epc, edt: Edt::new(bytes) }
         }
     };
 }
 
-// TODO: もう少し効率良い実装に
-#[macro_export]
+/// Create a Properties object from an array of EPC (u8) and EDT ([u8; _]) pairs.
+///
+/// # Examples
+///
+/// ```
+/// use echonet_lite::{prelude::*, props};
+/// let props = props!([0x80, [0x30]], [0x81, [0x08]]);
+/// ```
+#[macro_export(local_inner_macros)]
 macro_rules! props {
     ( $( [ $epc:expr, [ $( $edt:expr ),* ] ] ),* ) => {
         {
             let mut props: Vec<Property> = Vec::new();
             $(
-                props.push( prop!($epc, [ $( $edt ),* ] ) );
+                props.push( $crate::prop!($epc, [ $( $edt ),* ] ) );
             )*
             Properties::from(props)
         }
     };
 }
 
+/// Create a Properties object for Get request obtaining one or more property values.
+///
+/// # Examples
+///
+/// ```
+/// use echonet_lite::{prelude::*, bulk_read};
+/// let props = bulk_read!(0x80, 0x81, 0x82);
+/// ```
 #[macro_export]
 macro_rules! bulk_read {
     ( $( $epc:expr ),* ) => {
         {
             let mut props: Vec<Property> = Vec::new();
             $(
-                props.push( prop!($epc, [] ) );
+                props.push( $crate::prop!($epc, [] ) );
             )*
-            Properties(props)
+            Properties::from(props)
         }
     };
 }

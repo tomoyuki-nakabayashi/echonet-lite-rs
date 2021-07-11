@@ -1,8 +1,14 @@
 [package]
-name = "echonet-lite-rs"
+name = "echonet-lite"
 version = "0.1.0"
 authors = ["tomoyuki-nakabayashi <tomo.wait.for.it.yuki@gmail.com>"]
 license = "MIT OR Apache-2.0"
+description = "Pure Rust ECHONET Lite implementation"
+keywords = ["no-std", "echonet-lite"]
+categories = ["Embedded development", "Encoding"]
+repository = "https://github.com/tomoyuki-nakabayashi/echonet-lite-rs"
+readme = "README.md"
+documentation = "https://docs.rs/crate/echonet-lite/"
 edition = "2018"
 
 [dependencies]
