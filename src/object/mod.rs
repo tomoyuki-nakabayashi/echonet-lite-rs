@@ -3,11 +3,17 @@ use core::fmt;
 use phf::phf_map;
 use serde::{Deserialize, Serialize};
 
+/// Packet specified to an ECHONET class.
 pub enum ClassPacket {
+    /// Any unimplemented class fallback
     Unimplemented(UnimplementedPacket),
+    /// House hold solar power class packet
     SolarPower(SolarPowerPacket),
+    /// Storage battery class packet
     StorageBattery(StorageBatteryPacket),
+    /// Electric vehicle charger/discharger class packet
     Evps(EvpsPacket),
+    /// Node profile class packet
     Profile(ProfilePacket),
 }
 
@@ -440,7 +446,12 @@ impl From<EchonetObject> for Class {
     }
 }
 
-// TODO: add methods
+/// An ECHONET object.
+///
+/// ECHONET objects are described using the formats [X1.X2] and [X3].
+/// - X1: Class group code
+/// - X2: Class code
+/// - X3: Instance code
 #[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
 pub struct EchonetObject {
     class: ClassCode,
