@@ -1,5 +1,5 @@
-use bare_io as io;
-use bare_io::Result;
+use crate::io::io;
+use io::Result;
 
 pub trait WriteBytesExt: io::Write {
     #[inline]

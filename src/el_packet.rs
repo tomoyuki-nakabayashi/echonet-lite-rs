@@ -1,7 +1,7 @@
 #![allow(dead_code)]
-use alloc::vec::Vec;
-use core::fmt;
-use core::ops::{Deref, DerefMut};
+use crate::lib::fmt;
+use crate::lib::ops::{Deref, DerefMut};
+use crate::lib::vec::Vec;
 use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -170,7 +170,7 @@ impl Properties {
 
 impl core::iter::IntoIterator for Properties {
     type Item = Property;
-    type IntoIter = alloc::vec::IntoIter<Property>;
+    type IntoIter = crate::lib::vec::IntoIter<Property>;
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
     }

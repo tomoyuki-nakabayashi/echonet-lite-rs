@@ -1,6 +1,6 @@
 use crate::error::{Error, ErrorKind};
-use alloc::vec::Vec;
-use bare_io as io;
+use crate::io::io;
+use crate::lib::vec::Vec;
 use io::Write;
 use write::WriteBytesExt;
 

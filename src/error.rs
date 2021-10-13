@@ -1,9 +1,6 @@
-use alloc::{
-    boxed::Box,
-    string::{String, ToString},
-};
+use crate::lib::{Box, String, ToString};
 
-use bare_io as io;
+use crate::io::io;
 use core::{fmt, str::Utf8Error};
 
 /// The result of a serialization or deserialization operation.
@@ -69,6 +66,16 @@ impl fmt::Display for ErrorKind {
                 )
             }
             ErrorKind::Custom(ref s) => s.fmt(fmt),
+        }
+    }
+}
+
+impl serde::de::StdError for Error {
+    #[cfg(feature = "std")]
+    fn source(&self) -> Option<&(dyn serde::de::StdError + 'static)> {
+        match **self {
+            ErrorKind::Io(ref err) => Some(err),
+            _ => None,
         }
     }
 }
