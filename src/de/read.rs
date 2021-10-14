@@ -1,5 +1,4 @@
-use bare_io as io;
-use io::Result;
+use crate::io::{self, Result};
 
 pub trait ReadBytesExt: io::Read {
     #[inline]
