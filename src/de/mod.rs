@@ -1,5 +1,5 @@
 use crate::error::{Error, ErrorKind, Result};
-use crate::io::io;
+use crate::io;
 use crate::lib::{Box, Vec};
 use read::ReadBytesExt;
 use serde::de::Error as DeError;

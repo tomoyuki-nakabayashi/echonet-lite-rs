@@ -1,7 +1,6 @@
 use crate::error::{Error, ErrorKind};
-use crate::io::io;
+use crate::io::{self, Write};
 use crate::lib::vec::Vec;
-use io::Write;
 use write::WriteBytesExt;
 
 mod write;

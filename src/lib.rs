@@ -23,7 +23,7 @@ mod lib {
     pub use self::core::default::{self, Default};
     pub use self::core::fmt::{self, Debug, Display};
     pub use self::core::result::{self, Result};
-    pub use self::core::{ops};
+    pub use self::core::{ops, str};
 
     #[cfg(not(feature = "std"))]
     pub use alloc::string::{String, ToString};

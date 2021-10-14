@@ -1,7 +1,7 @@
 use crate::lib::{Box, String, ToString};
 
-use crate::io::io;
-use core::{fmt, str::Utf8Error};
+use crate::io;
+use crate::lib::{fmt, str::Utf8Error};
 
 /// The result of a serialization or deserialization operation.
 pub type Result<T> = ::core::result::Result<T, Error>;
