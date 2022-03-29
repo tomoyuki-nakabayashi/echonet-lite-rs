@@ -53,7 +53,7 @@ mod error;
 mod io;
 mod ser;
 
-pub mod prelude;
 pub mod object;
+pub mod prelude;
 pub use el_packet::*;
 pub use error::{Error, ErrorKind, Result};
