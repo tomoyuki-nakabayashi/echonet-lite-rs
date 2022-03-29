@@ -17,7 +17,7 @@ num-derive = "0.3"
 num-traits = "0.2"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde_repr = "0.1"
-bare-io = "0.2"
+core2 = "0.4"
 phf = { version = "0.9", features = ["macros"] }
 
 [features]
