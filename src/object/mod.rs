@@ -75,7 +75,7 @@ impl fmt::Display for ClassCode {
     }
 }
 
-static SUPER_CLASS: phf::Map<u8, &'static str> = phf_map! {
+pub static SUPER_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0x80u8 => "動作状態",
     0x81u8 => "設置場所",
     0x82u8 => "規格version",
@@ -102,7 +102,7 @@ static SUPER_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0x9Fu8 => "Getプロパティマップ",
 };
 
-static PROFILE_CLASS: phf::Map<u8, &'static str> = phf_map! {
+pub static PROFILE_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xBFu8 => "個体識別情報",
     0xD3u8 => "自ノードインスタンス数",
     0xD4u8 => "自ノードクラス数",
@@ -111,7 +111,7 @@ static PROFILE_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xD7u8 => "自ノードクラスリストS",
 };
 
-static HOUSEHOLD_SOLAR_POWER_CLASS: phf::Map<u8, &'static str> = phf_map! {
+pub static HOUSEHOLD_SOLAR_POWER_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xA0u8 => "出力制御設定１",
     0xA1u8 => "出力制御設定２",
     0xA2u8 => "余剰買取制御機能設定",
@@ -139,7 +139,7 @@ static HOUSEHOLD_SOLAR_POWER_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xE9u8 => "定格発電電力値（独立時",
 };
 
-static STORAGE_BATTERY_CLASS: phf::Map<u8, &'static str> = phf_map! {
+pub static STORAGE_BATTERY_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xA0u8 => "AC実効容量（充電）",
     0xA1u8 => "AC実効容量（放電）",
     0xA2u8 => "AC充電可能容量",
@@ -197,7 +197,7 @@ static STORAGE_BATTERY_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xEFu8 => "定格電圧（独立時）",
 };
 
-static EVPS_CLASS: phf::Map<u8, &'static str> = phf_map! {
+pub static EVPS_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xC0u8 => "車載電池の放電可能容量値1",
     0xC1u8 => "車載電池の放電可能容量値2",
     0xC2u8 => "車載電池の放電可能残容量1",
