@@ -51,9 +51,9 @@ mod de;
 mod el_packet;
 mod error;
 mod io;
-mod object;
 mod ser;
 
+pub mod object;
 pub mod prelude;
 pub use el_packet::*;
 pub use error::{Error, ErrorKind, Result};
