@@ -13,6 +13,8 @@ pub enum ClassPacket {
     StorageBattery(StorageBatteryPacket),
     /// Electric vehicle charger/discharger class packet
     Evps(EvpsPacket),
+    /// Heat pump
+    Hp(HpPacket),
     /// Node profile class packet
     Profile(ProfilePacket),
 }
@@ -27,6 +29,7 @@ impl ClassPacket {
                 ClassPacket::StorageBattery(StorageBatteryPacket(props))
             }
             ClassCode(code::EVPS) => ClassPacket::Evps(EvpsPacket(props)),
+            ClassCode(code::HP) => ClassPacket::Hp(HpPacket(props)),
             ClassCode(code::PROFILE) => ClassPacket::Profile(ProfilePacket(props)),
             _ => ClassPacket::Unimplemented(UnimplementedPacket(eoj.class, props)),
         }
@@ -39,6 +42,7 @@ impl From<ElPacket> for ClassPacket {
             ClassCode(code::HOUSEHOLD_SOLAR_POWER) => ClassPacket::SolarPower(value.into()),
             ClassCode(code::STORAGE_BATTERY) => ClassPacket::StorageBattery(value.into()),
             ClassCode(code::EVPS) => ClassPacket::Evps(value.into()),
+            ClassCode(code::HP) => ClassPacket::Hp(value.into()),
             ClassCode(code::PROFILE) => ClassPacket::Profile(value.into()),
             _ => ClassPacket::Unimplemented(value.into()),
         }
@@ -51,6 +55,7 @@ impl fmt::Display for ClassPacket {
             ClassPacket::SolarPower(v) => write!(f, "{}", v)?,
             ClassPacket::StorageBattery(v) => write!(f, "{}", v)?,
             ClassPacket::Evps(v) => write!(f, "{}", v)?,
+            ClassPacket::Hp(v) => write!(f, "{}", v)?,
             ClassPacket::Profile(v) => write!(f, "{}", v)?,
             ClassPacket::Unimplemented(v) => write!(f, "{}", v)?,
         }
@@ -62,6 +67,7 @@ mod code {
     pub const HOUSEHOLD_SOLAR_POWER: [u8; 2] = [0x02, 0x79];
     pub const STORAGE_BATTERY: [u8; 2] = [0x02, 0x7D];
     pub const EVPS: [u8; 2] = [0x02, 0x7E];
+    pub const HP: [u8; 2] = [0x02, 0x6B];
     pub const CONTROLLER: [u8; 2] = [0x05, 0xFE];
     pub const PROFILE: [u8; 2] = [0x0E, 0xF0];
 }
@@ -245,6 +251,55 @@ pub static EVPS_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xEFu8 => "定格電圧（独立時）",
 };
 
+pub static HP_CLASS: phf::Map<u8, &'static str> = phf_map! {
+    0xB0u8 => "沸き上げ自動設定",
+    0xB1u8 => "沸き上げ湯温自動設定",
+    0xB2u8 => "沸き上げ中状態",
+    0xB3u8 => "沸き上げ湯温設定値",
+    0xB4u8 => "手動沸き上げ停止日数設定値",
+    0xB5u8 => "手動沸き上げOFFタイマ相対時間設定値",
+    0xB6u8 => "タンク運転モード設定",
+    0xC0u8 => "昼間沸き増し許可設定",
+    0xC1u8 => "温水器湯温計測値",
+    0xC2u8 => "警報発生状態",
+    0xC3u8 => "給湯中状態",
+    0xC4u8 => "風呂保温運転相対時間設定値",
+    0xD1u8 => "給湯温度設定値",
+    0xD3u8 => "風呂温度設定値",
+    0xE0u8 => "沸き上げ湯量設定値",
+    0xE1u8 => "残湯量計測値",
+    0xE2u8 => "タンク容量値",
+    0xE3u8 => "風呂自動モード設定",
+    0xE9u8 => "浴室優先設定",
+    0xEAu8 => "風呂動作状態監視",
+    0xE4u8 => "手動風呂追い焚き動作設定",
+    0xE5u8 => "手動風呂足し湯動作設定",
+    0xE6u8 => "手動風呂ぬるめ動作設定",
+    0xE7u8 => "風呂湯量設定1",
+    0xE8u8 => "風呂湯量設定2",
+    0xEEu8 => "風呂湯量設定3",
+    0xD4u8 => "風呂湯量設定4",
+    0xD5u8 => "風呂湯量設定4設定可能最大レベル",
+    0x90u8 => "ＯＮタイマ予約設定",
+    0x91u8 => "ＯＮタイマ時刻設定値",
+    0xD6u8 => "音量設定値",
+    0xD7u8 => "ミュート設定",
+    0xD8u8 => "給湯可能湯量値",
+    0xD9u8 => "余剰電力量予測値",
+    0xDBu8 => "冬季H/Pユニット定格消費電力",
+    0xDCu8 => "中間期H/Pユニット定格消費電力",
+    0xDDu8 => "夏季H/Pユニット定格消費電力",
+    0xC7u8 => "エネルギーシフト参加状態",
+    0xC8u8 => "沸き上げ開始基準時刻",
+    0xC9u8 => "エネルギーシフト回数",
+    0xCAu8 => "昼間沸き上げシフト時刻1",
+    0xCBu8 => "昼間沸き上げシフト時刻1での沸き上げ予測電力量",
+    0xCCu8 => "時間当たり消費電力量1",
+    0xCDu8 => "昼間沸き上げシフト時刻2",
+    0xCEu8 => "昼間沸き上げシフト時刻2での沸き上げ予測電力量",
+    0xCFu8 => "時間当たり消費電力量2",
+};
+
 pub struct UnimplementedPacket(ClassCode, Properties);
 impl fmt::Display for UnimplementedPacket {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -372,6 +427,39 @@ impl From<ElPacket> for EvpsPacket {
             panic!("source echonet object class must be EVPS class.")
         }
         EvpsPacket(value.props)
+    }
+}
+
+pub struct HpPacket(Properties);
+impl HpPacket {
+    #[allow(dead_code)]
+    const CODE: [u8; 2] = code::HP;
+}
+
+impl fmt::Display for HpPacket {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "HP: 0x{:02X}{:02X}", Self::CODE[0], Self::CODE[1])?;
+        for prop in self.0.iter() {
+            if let Some(name) = SUPER_CLASS.get(&prop.epc) {
+                writeln!(f, "[{}]\t {}", name, prop)?;
+                continue;
+            }
+            if let Some(name) = HP_CLASS.get(&prop.epc) {
+                writeln!(f, "[{}]\t {}", name, prop)?;
+                continue;
+            }
+            writeln!(f, "[unknown]\t {}", prop)?;
+        }
+        Ok(())
+    }
+}
+
+impl From<ElPacket> for HpPacket {
+    fn from(value: ElPacket) -> Self {
+        if value.seoj.class != ClassCode(Self::CODE) {
+            panic!("source echonet object class must be EVPS class.")
+        }
+        HpPacket(value.props)
     }
 }
 
