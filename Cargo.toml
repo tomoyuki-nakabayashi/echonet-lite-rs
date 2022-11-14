@@ -1,6 +1,6 @@
 [package]
 name = "echonet-lite"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["tomoyuki-nakabayashi <tomo.wait.for.it.yuki@gmail.com>"]
 license = "MIT OR Apache-2.0"
 description = "Pure Rust ECHONET Lite implementation"
