@@ -47,12 +47,14 @@ mod lib {
     pub use std::io;
 }
 
-mod de;
 mod el_packet;
 mod error;
 mod io;
-mod ser;
 
+mod de;
+mod ser;
+pub use de::deserialize;
+pub use ser::serialize;
 pub mod object;
 pub mod prelude;
 pub use el_packet::*;
