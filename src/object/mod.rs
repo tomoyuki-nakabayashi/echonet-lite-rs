@@ -15,6 +15,8 @@ pub enum ClassPacket {
     Evps(EvpsPacket),
     /// Heat pump
     Hp(HpPacket),
+    /// Smart Meter class packet
+    SmartMeter(SmartMeterPacket),
     /// Node profile class packet
     Profile(ProfilePacket),
 }
@@ -30,6 +32,7 @@ impl ClassPacket {
             }
             ClassCode(code::EVPS) => ClassPacket::Evps(EvpsPacket(props)),
             ClassCode(code::HP) => ClassPacket::Hp(HpPacket(props)),
+            ClassCode(code::SMART_METER) => ClassPacket::SmartMeter(SmartMeterPacket(props)),
             ClassCode(code::PROFILE) => ClassPacket::Profile(ProfilePacket(props)),
             _ => ClassPacket::Unimplemented(UnimplementedPacket(eoj.class, props)),
         }
@@ -43,6 +46,7 @@ impl From<ElPacket> for ClassPacket {
             ClassCode(code::STORAGE_BATTERY) => ClassPacket::StorageBattery(value.into()),
             ClassCode(code::EVPS) => ClassPacket::Evps(value.into()),
             ClassCode(code::HP) => ClassPacket::Hp(value.into()),
+            ClassCode(code::SMART_METER) => ClassPacket::SmartMeter(value.into()),
             ClassCode(code::PROFILE) => ClassPacket::Profile(value.into()),
             _ => ClassPacket::Unimplemented(value.into()),
         }
@@ -56,6 +60,7 @@ impl fmt::Display for ClassPacket {
             ClassPacket::StorageBattery(v) => write!(f, "{}", v)?,
             ClassPacket::Evps(v) => write!(f, "{}", v)?,
             ClassPacket::Hp(v) => write!(f, "{}", v)?,
+            ClassPacket::SmartMeter(v) => write!(f, "{}", v)?,
             ClassPacket::Profile(v) => write!(f, "{}", v)?,
             ClassPacket::Unimplemented(v) => write!(f, "{}", v)?,
         }
@@ -68,6 +73,7 @@ mod code {
     pub const STORAGE_BATTERY: [u8; 2] = [0x02, 0x7D];
     pub const EVPS: [u8; 2] = [0x02, 0x7E];
     pub const HP: [u8; 2] = [0x02, 0x6B];
+    pub const SMART_METER: [u8; 2] = [0x02, 0x88];
     pub const CONTROLLER: [u8; 2] = [0x05, 0xFE];
     pub const PROFILE: [u8; 2] = [0x0E, 0xF0];
 }
@@ -115,6 +121,23 @@ pub static PROFILE_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xD5u8 => "インスタンスリスト通知",
     0xD6u8 => "自ノードインスタンスリストS",
     0xD7u8 => "自ノードクラスリストS",
+};
+
+pub static SMART_METER_CLASS: phf::Map<u8, &'static str> = phf_map! {
+    0xD3u8 => "係数",
+    0xD7u8 => "積算電力量有効桁数",
+    0xE0u8 => "積算電力量計測値（正方向計測値）",
+    0xE1u8 => "積算電力量単位（正方向、逆方向計測値）",
+    0xE2u8 => "積算電力量計測値履歴1（正方向計測値）",
+    0xE3u8 => "積算電力量計測値（逆方向計測値）",
+    0xE4u8 => "積算電力量計測値履歴1（逆方向計測値）",
+    0xE5u8 => "積算履歴収集日",
+    0xE7u8 => "瞬時電力計測値",
+    0xE8u8 => "瞬時電流計測値",
+    0xEAu8 => "定時積算電力量計測値（正方向計測値）",
+    0xEBu8 => "定時積算電力量計測値（逆方向計測値）",
+    0xECu8 => "積算電力量計測値履歴2（正方向、逆方向計測値）",
+    0xEDu8 => "積算履歴収集日2",
 };
 
 pub static HOUSEHOLD_SOLAR_POWER_CLASS: phf::Map<u8, &'static str> = phf_map! {
@@ -318,6 +341,44 @@ impl fmt::Display for UnimplementedPacket {
 impl From<ElPacket> for UnimplementedPacket {
     fn from(value: ElPacket) -> Self {
         UnimplementedPacket(value.seoj.class, value.props)
+    }
+}
+
+pub struct SmartMeterPacket(Properties);
+impl SmartMeterPacket {
+    #[allow(dead_code)]
+    const CODE: [u8; 2] = code::SMART_METER;
+}
+
+impl fmt::Display for SmartMeterPacket {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(
+            f,
+            "Smart Meter: 0x{:02X}{:02X}",
+            Self::CODE[0],
+            Self::CODE[1]
+        )?;
+        for prop in self.0.iter() {
+            if let Some(name) = SUPER_CLASS.get(&prop.epc) {
+                writeln!(f, "[{}]\t {}", name, prop)?;
+                continue;
+            }
+            if let Some(name) = SMART_METER_CLASS.get(&prop.epc) {
+                writeln!(f, "[{}]\t {}", name, prop)?;
+                continue;
+            }
+            writeln!(f, "[unknown]\t {}", prop)?;
+        }
+        Ok(())
+    }
+}
+
+impl From<ElPacket> for SmartMeterPacket {
+    fn from(value: ElPacket) -> Self {
+        if value.seoj.class != ClassCode(Self::CODE) {
+            panic!("source echonet object class must be smart meter class.")
+        }
+        SmartMeterPacket(value.props)
     }
 }
 
