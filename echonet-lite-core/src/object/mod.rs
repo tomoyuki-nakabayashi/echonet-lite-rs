@@ -344,218 +344,79 @@ impl From<ElPacket> for UnimplementedPacket {
     }
 }
 
+macro_rules! convert_packet {
+    ( $code:expr, $ty:ty, $class:expr, $class_desc:expr) => {
+        impl $ty {
+            #[allow(dead_code)]
+            const CODE: [u8; 2] = $code;
+        }
+
+        impl fmt::Display for $ty {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                writeln!(
+                    f,
+                    "{}: 0x{:02X}{:02X}",
+                    $class_desc,
+                    Self::CODE[0],
+                    Self::CODE[1]
+                )?;
+                for prop in self.0.iter() {
+                    if let Some(name) = SUPER_CLASS.get(&prop.epc) {
+                        writeln!(f, "[{}]\t {}", name, prop)?;
+                        continue;
+                    }
+                    if let Some(name) = $class.get(&prop.epc) {
+                        writeln!(f, "[{}]\t {}", name, prop)?;
+                        continue;
+                    }
+                    writeln!(f, "[unknown]\t {}", prop)?;
+                }
+                Ok(())
+            }
+        }
+
+        impl From<ElPacket> for $ty {
+            fn from(value: ElPacket) -> Self {
+                if value.seoj.class != ClassCode(Self::CODE) {
+                    panic!("invalid source object class.")
+                }
+                Self(value.props)
+            }
+        }
+    };
+}
+
 pub struct SmartMeterPacket(Properties);
-impl SmartMeterPacket {
-    #[allow(dead_code)]
-    const CODE: [u8; 2] = code::SMART_METER;
-}
-
-impl fmt::Display for SmartMeterPacket {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(
-            f,
-            "Smart Meter: 0x{:02X}{:02X}",
-            Self::CODE[0],
-            Self::CODE[1]
-        )?;
-        for prop in self.0.iter() {
-            if let Some(name) = SUPER_CLASS.get(&prop.epc) {
-                writeln!(f, "[{}]\t {}", name, prop)?;
-                continue;
-            }
-            if let Some(name) = SMART_METER_CLASS.get(&prop.epc) {
-                writeln!(f, "[{}]\t {}", name, prop)?;
-                continue;
-            }
-            writeln!(f, "[unknown]\t {}", prop)?;
-        }
-        Ok(())
-    }
-}
-
-impl From<ElPacket> for SmartMeterPacket {
-    fn from(value: ElPacket) -> Self {
-        if value.seoj.class != ClassCode(Self::CODE) {
-            panic!("source echonet object class must be smart meter class.")
-        }
-        SmartMeterPacket(value.props)
-    }
-}
+convert_packet!(
+    code::SMART_METER,
+    SmartMeterPacket,
+    SMART_METER_CLASS,
+    "Smart Meter"
+);
 
 pub struct SolarPowerPacket(Properties);
-impl SolarPowerPacket {
-    #[allow(dead_code)]
-    const CODE: [u8; 2] = code::HOUSEHOLD_SOLAR_POWER;
-}
-
-impl fmt::Display for SolarPowerPacket {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(
-            f,
-            "House Hold Solar Power: 0x{:02X}{:02X}",
-            Self::CODE[0],
-            Self::CODE[1]
-        )?;
-        for prop in self.0.iter() {
-            if let Some(name) = SUPER_CLASS.get(&prop.epc) {
-                writeln!(f, "[{}]\t {}", name, prop)?;
-                continue;
-            }
-            if let Some(name) = HOUSEHOLD_SOLAR_POWER_CLASS.get(&prop.epc) {
-                writeln!(f, "[{}]\t {}", name, prop)?;
-                continue;
-            }
-            writeln!(f, "[unknown]\t {}", prop)?;
-        }
-        Ok(())
-    }
-}
-
-impl From<ElPacket> for SolarPowerPacket {
-    fn from(value: ElPacket) -> Self {
-        if value.seoj.class != ClassCode(Self::CODE) {
-            panic!("source echonet object class must be house hold solar power class.")
-        }
-        SolarPowerPacket(value.props)
-    }
-}
-
+convert_packet!(
+    code::HOUSEHOLD_SOLAR_POWER,
+    SolarPowerPacket,
+    HOUSEHOLD_SOLAR_POWER_CLASS,
+    "House Hold Solar Power"
+);
 pub struct StorageBatteryPacket(Properties);
-impl StorageBatteryPacket {
-    #[allow(dead_code)]
-    const CODE: [u8; 2] = code::STORAGE_BATTERY;
-}
-
-impl fmt::Display for StorageBatteryPacket {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(
-            f,
-            "StorageBattery: 0x{:02X}{:02X}",
-            Self::CODE[0],
-            Self::CODE[1]
-        )?;
-        for prop in self.0.iter() {
-            if let Some(name) = SUPER_CLASS.get(&prop.epc) {
-                writeln!(f, "[{}]\t {}", name, prop)?;
-                continue;
-            }
-            if let Some(name) = STORAGE_BATTERY_CLASS.get(&prop.epc) {
-                writeln!(f, "[{}]\t {}", name, prop)?;
-                continue;
-            }
-            writeln!(f, "[unknown]\t {}", prop)?;
-        }
-        Ok(())
-    }
-}
-
-impl From<ElPacket> for StorageBatteryPacket {
-    fn from(value: ElPacket) -> Self {
-        if value.seoj.class != ClassCode(Self::CODE) {
-            panic!("source echonet object class must be storage battery.")
-        }
-        StorageBatteryPacket(value.props)
-    }
-}
+convert_packet!(
+    code::STORAGE_BATTERY,
+    StorageBatteryPacket,
+    STORAGE_BATTERY_CLASS,
+    "Storage Battery"
+);
 
 pub struct EvpsPacket(Properties);
-impl EvpsPacket {
-    #[allow(dead_code)]
-    const CODE: [u8; 2] = code::EVPS;
-}
-
-impl fmt::Display for EvpsPacket {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "EVPS: 0x{:02X}{:02X}", Self::CODE[0], Self::CODE[1])?;
-        for prop in self.0.iter() {
-            if let Some(name) = SUPER_CLASS.get(&prop.epc) {
-                writeln!(f, "[{}]\t {}", name, prop)?;
-                continue;
-            }
-            if let Some(name) = EVPS_CLASS.get(&prop.epc) {
-                writeln!(f, "[{}]\t {}", name, prop)?;
-                continue;
-            }
-            writeln!(f, "[unknown]\t {}", prop)?;
-        }
-        Ok(())
-    }
-}
-
-impl From<ElPacket> for EvpsPacket {
-    fn from(value: ElPacket) -> Self {
-        if value.seoj.class != ClassCode(Self::CODE) {
-            panic!("source echonet object class must be EVPS class.")
-        }
-        EvpsPacket(value.props)
-    }
-}
+convert_packet!(code::EVPS, EvpsPacket, EVPS_CLASS, "EVPS");
 
 pub struct HpPacket(Properties);
-impl HpPacket {
-    #[allow(dead_code)]
-    const CODE: [u8; 2] = code::HP;
-}
-
-impl fmt::Display for HpPacket {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "HP: 0x{:02X}{:02X}", Self::CODE[0], Self::CODE[1])?;
-        for prop in self.0.iter() {
-            if let Some(name) = SUPER_CLASS.get(&prop.epc) {
-                writeln!(f, "[{}]\t {}", name, prop)?;
-                continue;
-            }
-            if let Some(name) = HP_CLASS.get(&prop.epc) {
-                writeln!(f, "[{}]\t {}", name, prop)?;
-                continue;
-            }
-            writeln!(f, "[unknown]\t {}", prop)?;
-        }
-        Ok(())
-    }
-}
-
-impl From<ElPacket> for HpPacket {
-    fn from(value: ElPacket) -> Self {
-        if value.seoj.class != ClassCode(Self::CODE) {
-            panic!("source echonet object class must be EVPS class.")
-        }
-        HpPacket(value.props)
-    }
-}
+convert_packet!(code::HP, HpPacket, HP_CLASS, "HP");
 
 pub struct ProfilePacket(Properties);
-impl ProfilePacket {
-    #[allow(dead_code)]
-    const CODE: [u8; 2] = code::PROFILE;
-}
-
-impl fmt::Display for ProfilePacket {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "Profile: 0x{:02X}{:02X}", Self::CODE[0], Self::CODE[1])?;
-        for prop in self.0.iter() {
-            if let Some(name) = SUPER_CLASS.get(&prop.epc) {
-                writeln!(f, "[{}]\t {}", name, prop)?;
-                continue;
-            }
-            if let Some(name) = PROFILE_CLASS.get(&prop.epc) {
-                writeln!(f, "[{}]\t {}", name, prop)?;
-                continue;
-            }
-            writeln!(f, "[unknown]\t {}", prop)?;
-        }
-        Ok(())
-    }
-}
-
-impl From<ElPacket> for ProfilePacket {
-    fn from(value: ElPacket) -> Self {
-        if value.seoj.class != ClassCode(Self::CODE) {
-            panic!("source echonet object class must be profile class.")
-        }
-        ProfilePacket(value.props)
-    }
-}
+convert_packet!(code::PROFILE, ProfilePacket, PROFILE_CLASS, "Node Profile");
 
 pub struct Controller;
 impl Controller {
