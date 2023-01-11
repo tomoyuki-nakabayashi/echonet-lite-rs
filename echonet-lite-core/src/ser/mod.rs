@@ -56,7 +56,7 @@ impl<'a, W: Write> serde::Serializer for &'a mut Serializer<W> {
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
         self.writer
-            .write_u8(if v { 1 } else { 0 })
+            .write_u8(u8::from(v))
             .map_err(Into::into)
     }
 

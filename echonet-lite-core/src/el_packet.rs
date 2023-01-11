@@ -148,7 +148,7 @@ impl fmt::Display for ServiceCode {
 }
 
 /// An ECHONET property array consists of `OPC, EPC1, PDC1, EDT1 ... EPCn, PDCn, EDTn`.
-#[derive(PartialEq, Default, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Properties(Vec<Property>);
 impl Properties {
     pub fn num(&self) -> usize {
@@ -223,7 +223,7 @@ impl Clone for Properties {
 }
 
 /// A ECHONET property putting EPC, OPC, and EDT together.
-#[derive(Clone, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Property {
     pub epc: u8,
     pub edt: Edt,
@@ -249,7 +249,7 @@ impl fmt::Debug for Property {
 ///
 /// EDT consists of data for the relevant ECHONET property (EPC) and
 /// control by an ESV (ServiceCode).
-#[derive(PartialEq, Default, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Edt(Vec<u8>);
 
 impl Edt {

@@ -1,7 +1,7 @@
 use crate::{ElPacket, Properties};
 use core::fmt;
-use serde::{Deserialize, Serialize};
 pub use property_maps::*;
+use serde::{Deserialize, Serialize};
 
 mod property_maps;
 
@@ -49,13 +49,25 @@ impl ClassPacket {
             ClassCode(code::EVPS) => ClassPacket::Evps(EvpsPacket(props)),
             ClassCode(code::HP) => ClassPacket::Hp(HpPacket(props)),
             ClassCode(code::SMART_METER) => ClassPacket::SmartMeter(SmartMeterPacket(props)),
-            ClassCode(code::HOME_AIR_CONDITIONER) => ClassPacket::AirConditioner(AirConditionerPacket(props)),
-            ClassCode(code::POWER_DISTRIBUTION_BOARD_METERING) => ClassPacket::Metering(MeteringPacket(props)),
+            ClassCode(code::HOME_AIR_CONDITIONER) => {
+                ClassPacket::AirConditioner(AirConditionerPacket(props))
+            }
+            ClassCode(code::POWER_DISTRIBUTION_BOARD_METERING) => {
+                ClassPacket::Metering(MeteringPacket(props))
+            }
             ClassCode(code::FUEL_CELL) => ClassPacket::FuelCell(FuelCellPacket(props)),
-            ClassCode(code::INSTANTANEOUS_WATER_HEATER) => ClassPacket::InstantaneousWaterHeater(InstantaneousWaterHeaterPacket(props)),
-            ClassCode(code::GENERAL_LIGHTING) => ClassPacket::GeneralLighting(GeneralLightingPacket(props)),
-            ClassCode(code::MONO_FUNCTION_LIGHTING) => ClassPacket::MonoFunctionLighting(MonoFunctionLightingPacket(props)),
-            ClassCode(code::LIGHTING_SYSTEM) => ClassPacket::LightingSystem(LightingSystemPacket(props)),
+            ClassCode(code::INSTANTANEOUS_WATER_HEATER) => {
+                ClassPacket::InstantaneousWaterHeater(InstantaneousWaterHeaterPacket(props))
+            }
+            ClassCode(code::GENERAL_LIGHTING) => {
+                ClassPacket::GeneralLighting(GeneralLightingPacket(props))
+            }
+            ClassCode(code::MONO_FUNCTION_LIGHTING) => {
+                ClassPacket::MonoFunctionLighting(MonoFunctionLightingPacket(props))
+            }
+            ClassCode(code::LIGHTING_SYSTEM) => {
+                ClassPacket::LightingSystem(LightingSystemPacket(props))
+            }
             ClassCode(code::PROFILE) => ClassPacket::Profile(ProfilePacket(props)),
             _ => ClassPacket::Unimplemented(UnimplementedPacket(eoj.class, props)),
         }
@@ -71,11 +83,17 @@ impl From<ElPacket> for ClassPacket {
             ClassCode(code::HP) => ClassPacket::Hp(value.into()),
             ClassCode(code::SMART_METER) => ClassPacket::SmartMeter(value.into()),
             ClassCode(code::HOME_AIR_CONDITIONER) => ClassPacket::AirConditioner(value.into()),
-            ClassCode(code::POWER_DISTRIBUTION_BOARD_METERING) => ClassPacket::Metering(value.into()),
+            ClassCode(code::POWER_DISTRIBUTION_BOARD_METERING) => {
+                ClassPacket::Metering(value.into())
+            }
             ClassCode(code::FUEL_CELL) => ClassPacket::FuelCell(value.into()),
-            ClassCode(code::INSTANTANEOUS_WATER_HEATER) => ClassPacket::InstantaneousWaterHeater(value.into()),
+            ClassCode(code::INSTANTANEOUS_WATER_HEATER) => {
+                ClassPacket::InstantaneousWaterHeater(value.into())
+            }
             ClassCode(code::GENERAL_LIGHTING) => ClassPacket::GeneralLighting(value.into()),
-            ClassCode(code::MONO_FUNCTION_LIGHTING) => ClassPacket::MonoFunctionLighting(value.into()),
+            ClassCode(code::MONO_FUNCTION_LIGHTING) => {
+                ClassPacket::MonoFunctionLighting(value.into())
+            }
             ClassCode(code::LIGHTING_SYSTEM) => ClassPacket::LightingSystem(value.into()),
             ClassCode(code::PROFILE) => ClassPacket::Profile(value.into()),
             _ => ClassPacket::Unimplemented(value.into()),
@@ -224,25 +242,60 @@ pub struct HpPacket(Properties);
 convert_packet!(code::HP, HpPacket, HP_CLASS, "HP");
 
 pub struct AirConditionerPacket(Properties);
-convert_packet!(code::HOME_AIR_CONDITIONER, AirConditionerPacket, HOME_AIR_CONDITIONER_CLASS, "Home Air Conditioner");
+convert_packet!(
+    code::HOME_AIR_CONDITIONER,
+    AirConditionerPacket,
+    HOME_AIR_CONDITIONER_CLASS,
+    "Home Air Conditioner"
+);
 
 pub struct MeteringPacket(Properties);
-convert_packet!(code::POWER_DISTRIBUTION_BOARD_METERING, MeteringPacket, POWER_DISTRIBUTION_BOARD_METERING_CLASS, "Power Distribution Board Metering");
+convert_packet!(
+    code::POWER_DISTRIBUTION_BOARD_METERING,
+    MeteringPacket,
+    POWER_DISTRIBUTION_BOARD_METERING_CLASS,
+    "Power Distribution Board Metering"
+);
 
 pub struct FuelCellPacket(Properties);
-convert_packet!(code::FUEL_CELL, FuelCellPacket, FUEL_CELL_CLASS, "Fuel Cell");
+convert_packet!(
+    code::FUEL_CELL,
+    FuelCellPacket,
+    FUEL_CELL_CLASS,
+    "Fuel Cell"
+);
 
 pub struct InstantaneousWaterHeaterPacket(Properties);
-convert_packet!(code::INSTANTANEOUS_WATER_HEATER, InstantaneousWaterHeaterPacket, INSTANTANEOUS_WATER_HEATER_CLASS, "Instantaneous Water Heater");
+convert_packet!(
+    code::INSTANTANEOUS_WATER_HEATER,
+    InstantaneousWaterHeaterPacket,
+    INSTANTANEOUS_WATER_HEATER_CLASS,
+    "Instantaneous Water Heater"
+);
 
 pub struct GeneralLightingPacket(Properties);
-convert_packet!(code::GENERAL_LIGHTING, GeneralLightingPacket, GENERAL_LIGHTING_CLASS, "General Lighting");
+convert_packet!(
+    code::GENERAL_LIGHTING,
+    GeneralLightingPacket,
+    GENERAL_LIGHTING_CLASS,
+    "General Lighting"
+);
 
 pub struct MonoFunctionLightingPacket(Properties);
-convert_packet!(code::MONO_FUNCTION_LIGHTING, MonoFunctionLightingPacket, MONO_FUNCTION_LIGHTING_CLASS, "Mono Function Lighting");
+convert_packet!(
+    code::MONO_FUNCTION_LIGHTING,
+    MonoFunctionLightingPacket,
+    MONO_FUNCTION_LIGHTING_CLASS,
+    "Mono Function Lighting"
+);
 
 pub struct LightingSystemPacket(Properties);
-convert_packet!(code::LIGHTING_SYSTEM, LightingSystemPacket, LIGHTING_SYSTEM_CLASS, "Lighting System");
+convert_packet!(
+    code::LIGHTING_SYSTEM,
+    LightingSystemPacket,
+    LIGHTING_SYSTEM_CLASS,
+    "Lighting System"
+);
 
 pub struct ProfilePacket(Properties);
 convert_packet!(code::PROFILE, ProfilePacket, PROFILE_CLASS, "Node Profile");
