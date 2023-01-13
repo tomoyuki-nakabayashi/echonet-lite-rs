@@ -13,35 +13,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-            profile: minimal
-            toolchain: stable
-            components: rustfmt, clippy
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-        working-directory: ./echonet-lite-core
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-        working-directory: ./echonet-lite-core
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: rustfmt, clippy }
+      - run: cargo fmt --all -- --check
+        working-directory: echonet-lite-core
+      - run: cargo clippy
+        working-directory: echonet-lite-core
   check-mra-reader:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-            profile: minimal
-            toolchain: stable
-            components: rustfmt, clippy
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-        working-directory: ./mra-reader
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-        working-directory: ./mra-reader
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: rustfmt, clippy }
+      - run: cargo fmt --all -- --check
+        working-directory: mra-reader
+      - run: cargo clippy
+        working-directory: mra-reader
