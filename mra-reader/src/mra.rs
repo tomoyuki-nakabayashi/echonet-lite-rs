@@ -23,6 +23,11 @@ pub struct AccessRule {
 pub struct DefRef {
     #[serde(rename = "$ref")]
     def: String,
+    coefficient: Option<serde_json::Value>,
+    #[serde(rename = "overflowCode")]
+    overflow_code: Option<bool>,
+    #[serde(rename = "underflowCode")]
+    underflow_code: Option<bool>,
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize)]
@@ -51,7 +56,7 @@ pub struct DefOneOf {
 pub struct DefElement {
     #[serde(rename = "shortName")]
     short_name: String,
-    element: DefOneOf,
+    element: TypeDef,
     #[serde(rename = "elementName")]
     name: JaEnString,
 }
@@ -87,6 +92,33 @@ pub struct DefBitMapType {
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
+pub struct DefArray {
+    #[serde(rename = "type")]
+    t: String,
+    #[serde(rename = "itemSize")]
+    item_size: usize,
+    #[serde(rename = "maxItems")]
+    max_items: usize,
+    items: TypeDef,
+}
+
+#[derive(Debug, PartialEq, Deserialize)]
+pub struct NumericValue {
+    edt: String,
+    #[serde(rename = "numericValue")]
+    value: f64,
+}
+
+#[derive(Debug, PartialEq, Deserialize)]
+pub struct DefNumeric {
+    #[serde(rename = "type")]
+    t: String,
+    size: usize,
+    #[serde(rename = "enum")]
+    enumerations: Vec<NumericValue>,
+}
+
+#[derive(Debug, PartialEq, Deserialize)]
 #[serde(untagged)]
 pub enum TypeDef {
     Ref(DefRef),
@@ -94,6 +126,9 @@ pub enum TypeDef {
     OneOf(DefOneOf),
     Object(DefObject),
     BitMap(DefBitMapType),
+    // need Box to avoid recursive infinite size
+    Array(Box<DefArray>),
+    Numeric(DefNumeric),
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
