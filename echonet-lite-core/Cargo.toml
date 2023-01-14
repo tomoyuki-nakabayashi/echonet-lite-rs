@@ -9,7 +9,7 @@ categories = ["Embedded development", "Encoding"]
 repository = "https://github.com/tomoyuki-nakabayashi/echonet-lite-rs"
 readme = "README.md"
 documentation = "https://docs.rs/crate/echonet-lite/"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 num = "0.4.0"
