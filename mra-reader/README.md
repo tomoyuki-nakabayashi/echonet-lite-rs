@@ -62,3 +62,15 @@ pub static homeAirConditioner: phf::Map<u8, &'static str> = phf_map! {
     0xD0u8 => "ブザー",
 };
 ```
+
+## how to test
+
+Please install cargo make if you have not installed yet.
+
+```shell
+$ cargo install cargo-make
+```
+
+```shell
+$ cargo make test-mra-reader
+```

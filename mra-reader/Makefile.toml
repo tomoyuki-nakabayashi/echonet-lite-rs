@@ -1,0 +1,16 @@
+[tasks.fetch-test-data]
+description = "fetch MRA data"
+condition = { files_not_exist = ["data"] }
+script = "mkdir -p data; curl https://echonet.jp/wp/wp-content/uploads/pdf/General/Standard/MRA/MRA_V1.1.1.zip -o data/MRA_V1.1.1.zip; unzip data/MRA_V1.1.1.zip -d data"
+
+[tasks.build]
+description = "build MRA reader binary"
+command = "cargo"
+args = ["build"]
+
+[tasks.test-mra-reader]
+description = "test mra-reader"
+script = "cargo run data/MRA_V1.1.1/mraData/devices/0x0287.json"
+# TODO: currently some read failed.
+# script = "find . -type f -regextype posix-egrep -regex ".*0x[0-9A-F]{4}.json" | xargs -n1 cargo run"
+dependencies = ["fetch-test-data", "build"]
