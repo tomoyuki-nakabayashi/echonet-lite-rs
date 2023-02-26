@@ -32,20 +32,6 @@ fn main() -> io::Result<()> {
                         let obj: ClassPacket = response.into();
                         println!("got response from {}", src_addr);
                         println!("{}", obj);
-                        match obj {
-                            ClassPacket::Profile(p) => {
-                                if let Some(instances) = p.instances() {
-                                    let eobj: Vec<EchonetObject> = instances.into();
-                                    println!("Parsed Instances: {:?}", eobj);
-                                    println!("");
-                                    println!("");
-                                    println!("");
-                                    println!("");
-                                }
-                            }
-
-                            _ => (),
-                        }
                     }
                 }
             }

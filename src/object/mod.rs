@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 pub enum ClassPacket {
     /// Any unimplemented class fallback
     Unimplemented(UnimplementedPacket),
+    /// Smart lights (on/off with optional brightness)
+    SingleFunctionLighting(SingleFunctionLightingPacket),
     /// House hold solar power class packet
     SolarPower(SolarPowerPacket),
     /// Storage battery class packet
@@ -26,6 +28,9 @@ impl ClassPacket {
         match eoj.class {
             ClassCode(code::HOUSEHOLD_SOLAR_POWER) => {
                 ClassPacket::SolarPower(SolarPowerPacket(props))
+            }
+            ClassCode(code::SINGLE_FUNCTION_LIGHTING) => {
+                ClassPacket::SingleFunctionLighting(SingleFunctionLightingPacket(props))
             }
             ClassCode(code::STORAGE_BATTERY) => {
                 ClassPacket::StorageBattery(StorageBatteryPacket(props))
@@ -57,6 +62,7 @@ impl fmt::Display for ClassPacket {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ClassPacket::SolarPower(v) => write!(f, "{}", v)?,
+            ClassPacket::SingleFunctionLighting(v) => write!(f, "{}", v)?,
             ClassPacket::StorageBattery(v) => write!(f, "{}", v)?,
             ClassPacket::Evps(v) => write!(f, "{}", v)?,
             ClassPacket::Hp(v) => write!(f, "{}", v)?,
@@ -70,6 +76,7 @@ impl fmt::Display for ClassPacket {
 
 mod code {
     pub const HOUSEHOLD_SOLAR_POWER: [u8; 2] = [0x02, 0x79];
+    pub const SINGLE_FUNCTION_LIGHTING: [u8; 2] = [0x02, 0x91];
     pub const STORAGE_BATTERY: [u8; 2] = [0x02, 0x7D];
     pub const EVPS: [u8; 2] = [0x02, 0x7E];
     pub const HP: [u8; 2] = [0x02, 0x6B];
@@ -167,6 +174,9 @@ pub static HOUSEHOLD_SOLAR_POWER_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xE8u8 => "定格発電電力値（系統連系時",
     0xE9u8 => "定格発電電力値（独立時",
 };
+
+// TODO: list property codes for single function lighting
+pub static SINGLE_FUNCTION_LIGTHING_CLASS: phf::Map<u8, &'static str> = phf_map! {};
 
 pub static STORAGE_BATTERY_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xA0u8 => "AC実効容量（充電）",
@@ -420,6 +430,44 @@ impl From<ElPacket> for SolarPowerPacket {
     }
 }
 
+pub struct SingleFunctionLightingPacket(Properties);
+impl SingleFunctionLightingPacket {
+    #[allow(dead_code)]
+    const CODE: [u8; 2] = code::SINGLE_FUNCTION_LIGHTING;
+}
+
+impl fmt::Display for SingleFunctionLightingPacket {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(
+            f,
+            "SingleFunctionLighting: 0x{:02X}{:02X}",
+            Self::CODE[0],
+            Self::CODE[1]
+        )?;
+        for prop in self.0.iter() {
+            if let Some(name) = SUPER_CLASS.get(&prop.epc) {
+                writeln!(f, "[{}]\t {}", name, prop)?;
+                continue;
+            }
+            if let Some(name) = SINGLE_FUNCTION_LIGTHING_CLASS.get(&prop.epc) {
+                writeln!(f, "[{}]\t {}", name, prop)?;
+                continue;
+            }
+            writeln!(f, "[unknown]\t {}", prop)?;
+        }
+        Ok(())
+    }
+}
+
+impl From<ElPacket> for SingleFunctionLightingPacket {
+    fn from(value: ElPacket) -> Self {
+        if value.seoj.class != ClassCode(Self::CODE) {
+            panic!("source echonet object class must be single function lighting class.")
+        }
+        Self(value.props)
+    }
+}
+
 pub struct StorageBatteryPacket(Properties);
 impl StorageBatteryPacket {
     #[allow(dead_code)]
@@ -543,6 +591,13 @@ impl fmt::Display for ProfilePacket {
                 continue;
             }
             writeln!(f, "[unknown]\t {}", prop)?;
+        }
+        if let Some(instances) = self.instances() {
+            let instances: Vec<EchonetObject> = instances.into();
+            for instance in instances {
+                let instance = ClassPacket::new(instance, vec![].into());
+                write!(f, " instance:\t {}", instance)?;
+            }
         }
         Ok(())
     }
