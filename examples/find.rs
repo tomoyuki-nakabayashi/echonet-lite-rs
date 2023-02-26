@@ -17,7 +17,7 @@ fn main() -> io::Result<()> {
         .seoj([0x05u8, 0xFFu8, 0x01u8])
         .deoj([0x0Eu8, 0xF0u8, 0x01u8])
         .esv(el::ServiceCode::Get)
-        .props(el::props!([0x80, []]))
+        .props(el::props!([0x80, []], [0xD6, []]))
         .build();
     let bytes = packet.serialize().expect("fail to serialize");
 
@@ -29,8 +29,23 @@ fn main() -> io::Result<()> {
             Ok((_, src_addr)) => {
                 if let Ok((_, response)) = el::ElPacket::from_bytes(&buffer) {
                     if response.is_response_for(&packet) {
+                        let obj: ClassPacket = response.into();
                         println!("got response from {}", src_addr);
-                        println!("{}", response);
+                        println!("{}", obj);
+                        match obj {
+                            ClassPacket::Profile(p) => {
+                                if let Some(instances) = p.instances() {
+                                    let eobj: Vec<EchonetObject> = instances.into();
+                                    println!("Parsed Instances: {:?}", eobj);
+                                    println!("");
+                                    println!("");
+                                    println!("");
+                                    println!("");
+                                }
+                            }
+
+                            _ => (),
+                        }
                     }
                 }
             }

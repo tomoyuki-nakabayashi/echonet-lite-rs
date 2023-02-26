@@ -1,5 +1,5 @@
-use crate::{ElPacket, Properties};
-use core::fmt;
+use crate::{Edt, ElPacket, Properties, Property};
+use core::{fmt, ops::Deref};
 use phf::phf_map;
 use serde::{Deserialize, Serialize};
 
@@ -557,6 +557,43 @@ impl From<ElPacket> for ProfilePacket {
     }
 }
 
+impl ProfilePacket {
+    // Searches within existing properties for instance lists, returning the
+    // first found or None if no one is found.
+    //
+    // The resulting ClassPackets have no properties, so they are not particularly
+    // useful besides for identification.
+    pub fn instances(&self) -> Option<InstanceList> {
+        self.0
+            .iter()
+            .filter_map(|x| {
+                let resp: Option<InstanceList> = x.into();
+                resp
+            })
+            .next()
+    }
+}
+
+// represents a property that is a list of instances
+#[derive(Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct InstanceList(Edt);
+
+impl Deref for InstanceList {
+    type Target = Edt;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<&Property> for Option<InstanceList> {
+    fn from(value: &Property) -> Self {
+        match value.epc {
+            0xD6u8 => Some(InstanceList(value.edt.clone())),
+            _ => None,
+        }
+    }
+}
+
 pub struct Controller;
 impl Controller {
     #[allow(dead_code)]
@@ -612,6 +649,33 @@ impl From<[u8; 3]> for EchonetObject {
         Self {
             class: ClassCode([eobj[0], eobj[1]]),
             instance: eobj[2],
+        }
+    }
+}
+
+impl From<InstanceList> for Vec<EchonetObject> {
+    // Converts from a property that is an instance list to
+    // a list of EchonetObjects.
+    //
+    // If the property list is not well formated or else empty, returns None
+    fn from(value: InstanceList) -> Self {
+        let mut iter = value.iter();
+        let Some(count) = iter.next() else {
+                     return vec!()
+        };
+        let resp = iter
+            .map(|&x| x)
+            .collect::<Vec<_>>()
+            .chunks(3)
+            .map(|x| EchonetObject::from([x[0], x[1], x[2]]))
+            .collect::<Vec<EchonetObject>>();
+        if resp.len() == usize::from(*count) {
+            resp
+        } else {
+            // it might be better to panic; or at least log it somewhere.
+            // however we don't have a standard log library being used yet here
+            // so will just return a valid vector so it doesn't panic
+            vec![]
         }
     }
 }
