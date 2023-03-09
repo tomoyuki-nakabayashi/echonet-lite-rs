@@ -46,14 +46,14 @@ impl From<io::Error> for Error {
 impl fmt::Display for ErrorKind {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            ErrorKind::Io(ref ioerr) => write!(fmt, "io error: {}", ioerr),
-            ErrorKind::InvalidUtf8Encoding(ref e) => write!(fmt, "InvalidUtf8Encoding: {}", e),
+            ErrorKind::Io(ref ioerr) => write!(fmt, "io error: {ioerr}"),
+            ErrorKind::InvalidUtf8Encoding(ref e) => write!(fmt, "InvalidUtf8Encoding: {e}"),
             ErrorKind::InvalidBoolEncoding(b) => {
-                write!(fmt, "InvalidBoolEncoding, expected 0 or 1, found {}", b)
+                write!(fmt, "InvalidBoolEncoding, expected 0 or 1, found {b}")
             }
             ErrorKind::InvalidCharEncoding => write!(fmt, "InvalidCharEncoding"),
             ErrorKind::InvalidTagEncoding(tag) => {
-                write!(fmt, "InvalidTagEncoding, found {}", tag)
+                write!(fmt, "InvalidTagEncoding, found {tag}")
             }
             ErrorKind::SequenceMustHaveLength => {
                 write!(fmt, "SequenceMustHaveLength")

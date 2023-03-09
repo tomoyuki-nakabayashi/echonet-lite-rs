@@ -104,20 +104,20 @@ impl From<ElPacket> for ClassPacket {
 impl fmt::Display for ClassPacket {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ClassPacket::SolarPower(v) => write!(f, "{}", v)?,
-            ClassPacket::StorageBattery(v) => write!(f, "{}", v)?,
-            ClassPacket::Evps(v) => write!(f, "{}", v)?,
-            ClassPacket::Hp(v) => write!(f, "{}", v)?,
-            ClassPacket::SmartMeter(v) => write!(f, "{}", v)?,
-            ClassPacket::AirConditioner(v) => write!(f, "{}", v)?,
-            ClassPacket::Metering(v) => write!(f, "{}", v)?,
-            ClassPacket::FuelCell(v) => write!(f, "{}", v)?,
-            ClassPacket::InstantaneousWaterHeater(v) => write!(f, "{}", v)?,
-            ClassPacket::GeneralLighting(v) => write!(f, "{}", v)?,
-            ClassPacket::MonoFunctionLighting(v) => write!(f, "{}", v)?,
-            ClassPacket::LightingSystem(v) => write!(f, "{}", v)?,
-            ClassPacket::Profile(v) => write!(f, "{}", v)?,
-            ClassPacket::Unimplemented(v) => write!(f, "{}", v)?,
+            ClassPacket::SolarPower(v) => write!(f, "{v}")?,
+            ClassPacket::StorageBattery(v) => write!(f, "{v}")?,
+            ClassPacket::Evps(v) => write!(f, "{v}")?,
+            ClassPacket::Hp(v) => write!(f, "{v}")?,
+            ClassPacket::SmartMeter(v) => write!(f, "{v}")?,
+            ClassPacket::AirConditioner(v) => write!(f, "{v}")?,
+            ClassPacket::Metering(v) => write!(f, "{v}")?,
+            ClassPacket::FuelCell(v) => write!(f, "{v}")?,
+            ClassPacket::InstantaneousWaterHeater(v) => write!(f, "{v}")?,
+            ClassPacket::GeneralLighting(v) => write!(f, "{v}")?,
+            ClassPacket::MonoFunctionLighting(v) => write!(f, "{v}")?,
+            ClassPacket::LightingSystem(v) => write!(f, "{v}")?,
+            ClassPacket::Profile(v) => write!(f, "{v}")?,
+            ClassPacket::Unimplemented(v) => write!(f, "{v}")?,
         }
         Ok(())
     }
@@ -155,10 +155,10 @@ impl fmt::Display for UnimplementedPacket {
         writeln!(f, "Unimplemented Class: {}", self.0)?;
         for prop in self.1.iter() {
             if let Some(name) = SUPER_CLASS.get(&prop.epc) {
-                writeln!(f, "[{}]\t {}", name, prop)?;
+                writeln!(f, "[{name}]\t {prop}")?;
                 continue;
             }
-            writeln!(f, "[unknown]\t {}", prop)?;
+            writeln!(f, "[unknown]\t {prop}")?;
         }
         Ok(())
     }
