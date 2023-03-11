@@ -29,8 +29,8 @@ fn main() -> io::Result<()> {
             Ok((_, src_addr)) => {
                 if let Ok((_, response)) = el::ElPacket::from_bytes(&buffer) {
                     if response.is_response_for(&packet) {
-                        println!("got response from {}", src_addr);
-                        println!("{}", response);
+                        println!("got response from {src_addr}");
+                        println!("{response}");
                     }
                 }
             }

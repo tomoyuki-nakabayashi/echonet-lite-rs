@@ -143,7 +143,7 @@ impl fmt::Display for ServiceCode {
             ServiceCode::InfCRes => "InfCRes",
             ServiceCode::SetGetRes => "SetGetRes",
         };
-        write!(f, "({})", esv)
+        write!(f, "({esv})")
     }
 }
 
@@ -201,7 +201,7 @@ impl fmt::Debug for Properties {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "OPC: {}", self.0.len())?;
         for prop in self.0.iter() {
-            write!(f, "{:?}", prop)?;
+            write!(f, "{prop:?}")?;
         }
         Ok(())
     }
@@ -210,7 +210,7 @@ impl fmt::Debug for Properties {
 impl fmt::Display for Properties {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for prop in self.0.iter() {
-            writeln!(f, "{}", prop)?;
+            writeln!(f, "{prop}")?;
         }
         Ok(())
     }
@@ -274,7 +274,7 @@ impl Clone for Edt {
 impl fmt::Display for Edt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for byte in self.0.iter() {
-            write!(f, "{:02X} ", byte)?;
+            write!(f, "{byte:02X} ")?;
         }
         Ok(())
     }
@@ -285,7 +285,7 @@ impl fmt::Debug for Edt {
         writeln!(f, "PDC: {}", self.0.len())?;
         write!(f, "EDT: ")?;
         for byte in self.0.iter() {
-            write!(f, "{:02X} ", byte)?;
+            write!(f, "{byte:02X} ")?;
         }
         Ok(())
     }
