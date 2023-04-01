@@ -72,6 +72,26 @@ impl ClassPacket {
             _ => ClassPacket::Unimplemented(UnimplementedPacket(eoj.class, props)),
         }
     }
+
+    /// fetches the properties for this ClassPacket, when appropriate.
+    pub fn properties(&self) -> &Properties {
+        match self {
+            Self::Unimplemented(p) => p.properties(),
+            Self::SolarPower(p) => p.properties(),
+            Self::StorageBattery(p) => p.properties(),
+            Self::Evps(p) => p.properties(),
+            Self::Hp(p) => p.properties(),
+            Self::SmartMeter(p) => p.properties(),
+            Self::AirConditioner(p) => p.properties(),
+            Self::Metering(p) => p.properties(),
+            Self::FuelCell(p) => p.properties(),
+            Self::InstantaneousWaterHeater(p) => p.properties(),
+            Self::GeneralLighting(p) => p.properties(),
+            Self::MonoFunctionLighting(p) => p.properties(),
+            Self::LightingSystem(p) => p.properties(),
+            Self::Profile(p) => p.properties(),
+        }
+    }
 }
 
 impl From<ElPacket> for ClassPacket {
@@ -150,6 +170,13 @@ impl fmt::Display for ClassCode {
 }
 
 pub struct UnimplementedPacket(ClassCode, Properties);
+
+impl UnimplementedPacket {
+    pub fn properties(&self) -> &Properties {
+        &self.1
+    }
+}
+
 impl fmt::Display for UnimplementedPacket {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "Unimplemented Class: {}", self.0)?;
@@ -175,6 +202,11 @@ macro_rules! convert_packet {
         impl $ty {
             #[allow(dead_code)]
             const CODE: [u8; 2] = $code;
+
+            /// Gets the properties used to construct this ClassPacket
+            pub fn properties(&self) -> &Properties {
+                &self.0
+            }
         }
 
         impl fmt::Display for $ty {
