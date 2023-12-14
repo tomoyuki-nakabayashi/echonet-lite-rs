@@ -431,3 +431,23 @@ pub static LIGHTING_SYSTEM_CLASS: phf::Map<u8, &'static str> = phf_map! {
     0xC0u8 => "シーン制御設定",
     0xC1u8 => "シーン制御設定可能数",
 };
+
+pub static CONTROLLER_CLASS: phf::Map<u8, &'static str> = phf_map! {
+    0xC0u8 => "コントローラID",
+    0xC1u8 => "管理台数",
+    0xC2u8 => "インデックス",
+    0xC3u8 => "機器ID",
+    0xC4u8 => "機種",
+    0xC5u8 => "名称",
+    0xC6u8 => "接続状態",
+    0xC7u8 => "管理対象機器事業者コード",
+    0xC8u8 => "管理対象機器商品コード",
+    0xC9u8 => "管理対象機器製造年月日",
+    0xCAu8 => "管理対象機器登録情報更新年月日",
+    0xCBu8 => "管理対象機器登録情報更新バージョン情報",
+    0xCCu8 => "管理対象機器設置場所",
+    0xCDu8 => "管理対象機器異常発生状態",
+    0xCEu8 => "管理対象機器Setプロパティマップ",
+    0xCFu8 => "管理対象機器Getプロパティマップ",
+    0xE0u8 => "設置住所",
+};
