@@ -35,6 +35,8 @@ pub enum ClassPacket {
     LightingSystem(LightingSystemPacket),
     /// Node profile class packet
     Profile(ProfilePacket),
+    /// Controller class
+    Controller(ControllerPacket),
 }
 
 impl ClassPacket {
@@ -69,6 +71,7 @@ impl ClassPacket {
                 ClassPacket::LightingSystem(LightingSystemPacket(props))
             }
             ClassCode(code::PROFILE) => ClassPacket::Profile(ProfilePacket(props)),
+            ClassCode(code::CONTROLLER) => ClassPacket::Controller(ControllerPacket(props)),
             _ => ClassPacket::Unimplemented(UnimplementedPacket(eoj.class, props)),
         }
     }
@@ -90,6 +93,7 @@ impl ClassPacket {
             Self::MonoFunctionLighting(p) => p.properties(),
             Self::LightingSystem(p) => p.properties(),
             Self::Profile(p) => p.properties(),
+            Self::Controller(p) => p.properties(),
         }
     }
 }
@@ -116,6 +120,7 @@ impl From<ElPacket> for ClassPacket {
             }
             ClassCode(code::LIGHTING_SYSTEM) => ClassPacket::LightingSystem(value.into()),
             ClassCode(code::PROFILE) => ClassPacket::Profile(value.into()),
+            ClassCode(code::CONTROLLER) => ClassPacket::Controller(value.into()),
             _ => ClassPacket::Unimplemented(value.into()),
         }
     }
@@ -137,6 +142,7 @@ impl fmt::Display for ClassPacket {
             ClassPacket::MonoFunctionLighting(v) => write!(f, "{v}")?,
             ClassPacket::LightingSystem(v) => write!(f, "{v}")?,
             ClassPacket::Profile(v) => write!(f, "{v}")?,
+            ClassPacket::Controller(v) => write!(f, "{v}")?,
             ClassPacket::Unimplemented(v) => write!(f, "{v}")?,
         }
         Ok(())
@@ -337,6 +343,14 @@ convert_packet!(
 
 pub struct ProfilePacket(Properties);
 convert_packet!(code::PROFILE, ProfilePacket, PROFILE_CLASS, "Node Profile");
+
+pub struct ControllerPacket(Properties);
+convert_packet!(
+    code::CONTROLLER,
+    ControllerPacket,
+    CONTROLLER_CLASS,
+    "Controller"
+);
 
 pub struct Controller;
 impl Controller {
